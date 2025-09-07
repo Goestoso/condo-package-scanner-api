@@ -18,8 +18,7 @@
   },
   "labels":{
     "ner":[
-      "DESTINATARIO",
-      "ENDERECO"
+      "PERSON"
     ]
   },
   "pipeline":[

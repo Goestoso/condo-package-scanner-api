@@ -1,8 +1,14 @@
 from src.sticker import Sticker
 
 if __name__ == '__main__':
-    data = Sticker("shopee.jpg")
-    data.extract_recipient()
-    print(data)
-    print(f"Nome: {data.recipient_name}")
-    print(f"Residência: {data.recipient_residence}")
+    condominio_enderecos = [
+        "Rua Jonas da Fonseca, 250, 1 Condominio marrom apt 404",
+        "Rua Jonas da Fonseca, 250, Condomínio azul, apartamento 112"
+    ]
+
+    sticker = Sticker("ml.jpg")
+
+    print(Sticker.sanitize(sticker.text))
+
+    sticker.extract_recipient()
+    print(f"Nome detectado: {sticker.recipient_name}")
