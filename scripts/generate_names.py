@@ -2,139 +2,22 @@ import json
 import random
 import unicodedata
 from pathlib import Path
+from faker import Faker
 
-# --- Listas de nomes ---
+faker = Faker("pt_BR")
 
-first_names = [
-    "Ruan", "Maria", "João", "Ana", "Lucas", "Beatriz", "Carlos", "Fernanda",
-    "Maurício", "Gabriel", "Juliana", "Paulo", "Renata", "Eduardo", "Carla",
-    "Thiago", "Larissa", "André", "Patrícia", "Rafael", "Camila", "Felipe", 
-    "Aline", "Vitor", "Bruna", "Daniel", "Simone", "Rodrigo", "Juliana", 
-    "Marcos", "Carolina", "Mateus", "Bianca", "Gustavo", "Letícia", "Igor", "Natália"
-]
+# --- Extrair base de nomes e sobrenomes ---
+first_names = set()
+last_names = set()
+for _ in range(5000):
+    name = faker.name().split()
+    if len(name) >= 2:
+        first_names.add(name[0])
+        last_names.add(name[-1])
 
-middle_names = [
-    "Rodrigues", "Oliveira", "da", "de", "dos", "do", "Lima", "Souza", "Almeida",
-    "Pereira", "Silva", "Santos", "Costa", "Cardoso", "Ferreira", "Barbosa", 
-    "Machado", "Medeiros", "Cavalcanti", "Gonçalves", "Nunes", "Teixeira", "Marques"
-]
-
-last_names = [
-    "Silva", "Souza", "Lima", "Oliveira", "Pereira", "Costa", "Almeida", "Dias",
-    "Ribeiro", "Martins", "Ferreira", "Gomes", "Carvalho", "Barbosa", "Mendes",
-    "Moura", "Siqueira", "Nascimento", "Assis", "Moreira", "Rocha", "Pinto"
-]
-
-# --- Contextos variados (50+) ---
-
-contexts = [
-    "{} mora em São Gonçalo",
-    "Entregar pacote para {}",
-    "Nome do destinatário: {}",
-    "Residência de {}: Rua das Flores",
-    "O pacote é para {}",
-    "Cliente {} comprou um item",
-    "Destinatário: {}",
-    "Enviar encomenda para {}",
-    "Endereço de {}",
-    "Pedido para {}",
-    "Recebedor: {}",
-    "Informações do cliente: {}",
-    "Volume enviado a {}",
-    "Pacote destinado a {}",
-    "Nome no DANFE: {}",
-    "Entrega registrada para {}",
-    "Pedido confirmado por {}",
-    "Assinatura de {}",
-    "Contato principal: {}",
-    "Morador: {}",
-    "Residência: {}",
-    "CPF/Cliente: {}",
-    "Endereço de entrega: {}",
-    "Pessoa responsável: {}",
-    "Atenção para {}",
-    "Entrega expressa para {}",
-    "Destinatário final: {}",
-    "Destinatário: {}",
-    "Remetente: {}",
-    "Nota fiscal do cliente {}",
-    "Item enviado a {}",
-    "Comprovante de entrega: {}",
-    "Confirmar entrega para {}",
-    "Registro de encomenda: {}",
-    "Remessa: {}",
-    "Recebido por {}",
-    "Confirmação do destinatário {}",
-    "Volume 1: {}",
-    "Nome no pacote: {}",
-    "Cliente: {}",
-    "Produto destinado a {}",
-    "Etiqueta de envio: {}",
-    "Transporte para {}",
-    "Destinatário correto: {}",
-    "Entrega agendada para {}",
-    "Confirmação de pedido: {}",
-    "Entrega realizada para {}",
-    "Pacote recebido por {}",
-    "Nota de envio: {}",
-    "Documento de entrega: {}",
-    "Cliente final: {}",
-    "Recebimento de {}",
-    "Envio concluído para {}",
-    "{} mora na Rua das Flores, nº 123",
-    "Entregar pacote para {} no Condomínio Azul, apto 202",
-    "Destinatário: {}",
-    "Residência de {}: Bairro dos Girassóis, 45",
-    "O pacote é para {} na Rua das Acácias",
-    "Cliente {} comprou um item",
-    "Enviar para {} - Rua das Orquídeas, 34, Bloco B",
-    "Nome do destinatário: {}",
-    "A encomenda deve ser entregue a {} na Rua do Sol, 50",
-    "Endereço do destinatário {}: Avenida Brasil, 200",
-    "{} - Rua da Paz, apartamento 12",
-    "Pacote destinado a {}",
-    "Entregar na casa de {} - Etrada Primavera, 77",
-    "Destinatário do pedido: {}",
-    "Residência: {} - Rua Vitória, 123",
-    "Envio para {} - Rua das Magnólias, 88, apto 3A",
-    "Cliente {} recebeu o pedido",
-    "Para {} na Rua dos Cravos, 101",
-    "Pacote a ser entregue a {} - Rodovia Estrela, 210",
-    "{} - Condomínio Jardim das Flores, apto 101",
-    "Rua das Palmeiras, nº 45, {}",
-    "{} - Rua das Orquídeas, Bloco C, apto 305",
-    "Entrega: {} - Parque das Acácias, 99",
-    "Destinatário {} - Praça da Alegria, 123",
-    "Cliente: {} - Pq do Horizonte, 500",
-    "Rua Vitória, nº 88, {}",
-    "{} - Bairro Hortênsias, apto 202",
-    "Pacote para {} - Praça do Sol, Bloco A, apto 101",
-    "Residência {} - Estrada das Flores, 78",
-    "Entregar encomenda a {} - Parque dos Cravos, apto 12",
-    "{} recebeu a encomenda - Rua Primavera, 101",
-    "Destinatário final: {}",
-    "{} - Rua dos Lírios, 55",
-    "Endereço para entrega: {} - Rua da Paz, 200",
-    "Cliente {} - Rua das Magnólias, 67, apto 3B",
-    "{} - Av das Acácias, apto 45",
-    "Entrega em mãos: {}",
-    "Destinatário principal: {} - Rodovia do Horizonte, 89",
-    "{} - Rua das Palmeiras, apto 202",
-    "Pacote destinado a {} - Rua do Sol, nº 210",
-    "{} - Rua das Hortênsias, Bloco B",
-    "Residência de {} - Rua da Alegria, 100",
-    "Cliente {} - Rua dos Girassóis, apto 3C",
-    "Entrega urgente para {}",
-    "{} - Rua das Flores, Bloco A, apto 101",
-    "Destinatário do pedido: {} - Rua do Sol, 55",
-    "Pacote a ser entregue a {} - Rua da Paz, nº 77",
-    "Av Primavera, nº 12, {}",
-    "Enviar para {} - Av. Vitória, apto 202",
-    "{} - Rua das Magnólias, apto 3A",
-    "Entrega para {} - Rua dos Lírios, nº 88",
-    "Destinatário: {} - Rua das Hortênsias, apto 101",
-    "{} - Av das Palmeiras, Bloco C, apto 305"
-]
+first_names = list(first_names)
+last_names = list(last_names)
+print(f"Coletados {len(first_names)} primeiros nomes e {len(last_names)} sobrenomes")
 
 # --- Funções auxiliares ---
 def remove_accents(text):
@@ -150,45 +33,60 @@ def random_case(text):
     else:
         return text.title()
 
-def random_abbreviation(name):
-    parts = name.split()
-    if len(parts) == 3 and random.random() < 0.3:
-        return f"{parts[0]} {parts[1][0]}. {parts[2]}"
-    return name
+def generate_long_name(first_names, last_names):
+    first_part = f"{random.choice(first_names)} {random.choice(first_names)}"
+    last_part = " ".join(random.choice(last_names) for _ in range(random.randint(2, 3)))
+    return f"{first_part} {last_part}"
+
+def generate_name():
+    r = random.random()
+    if r < 0.5:
+        return f"{random.choice(first_names)} {random.choice(last_names)}"
+    elif r < 0.8:
+        return f"{random.choice(first_names)} {random.choice(first_names)} {random.choice(last_names)}"
+    else:
+        return generate_long_name(first_names, last_names)
+
+# --- Contextos variados ---
+DATA_PATH = Path(__file__).parent.parent / "data" / "names_contexts.json"
+with open(DATA_PATH, "r", encoding="utf-8") as f:
+    contexts = json.load(f)
 
 # --- Gerar exemplos ---
 examples = []
-NUM_EXAMPLES = 10000
+NUM_EXAMPLES = 5000  # aumentar para 50k+
 
 while len(examples) < NUM_EXAMPLES:
-    first = random.choice(first_names)
-    middle = random.choice(middle_names)
-    last = random.choice(last_names)
-    name = f"{first} {middle} {last}"
+    name = generate_name()
+    address = faker.address().replace("\n", ", ")
+    cep = faker.postcode()
 
-    # Variações
-    name_var = random_case(name)
+    # Aleatorizar maiúsculas/minúsculas e remover acentos
     if random.random() < 0.2:
-        name_var = remove_accents(name_var)
-    name_var = random_abbreviation(name_var)
+        name = remove_accents(random_case(name))
 
-    # Escolher contexto ou nome isolado
-    if random.random() < 0.2:
-        text = name_var  # nome isolado
-    else:
-        context = random.choice(contexts)
-        text = context.format(name_var)
+    context = random.choice(contexts)
+    text = context.format(name=name, address=address, cep=cep)
 
-    # Introduzir ruído aleatório (números, caracteres)
-    if random.random() < 0.1:
-        text += f" {random.randint(1000,9999)}"
-    if random.random() < 0.05:
-        text += " ###"
+    entities = []
+    # Nome
+    start_name = text.index(name)
+    end_name = start_name + len(name)
+    entities.append((start_name, end_name, "PERSON"))
+    
+    # Endereço
+    if "{address}" in context:
+        start_addr = text.index(address)
+        end_addr = start_addr + len(address)
+        entities.append((start_addr, end_addr, "ADDRESS"))
+    
+    # CEP
+    if "{cep}" in context:
+        start_cep = text.index(cep)
+        end_cep = start_cep + len(cep)
+        entities.append((start_cep, end_cep, "CEP"))
 
-    # Garantir índice correto
-    start = text.index(name_var)
-    end = start + len(name_var)
-    examples.append((text, {"entities": [(start, end, "PERSON")]}))
+    examples.append((text, {"entities": entities}))
 
 # --- Salvar dataset ---
 DATA_PATH = Path(__file__).parent.parent / "data" / "names_training.json"
