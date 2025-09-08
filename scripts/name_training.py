@@ -1,14 +1,27 @@
 import spacy
 from spacy.training import Example
-import json
+from itertools import islice
+from spacy.util import minibatch, compounding
 from pathlib import Path
+import json
 import random
-from spacy.util import minibatch
+
+spacy.require_gpu()  # garante que o spaCy use a GPU
 
 # --- Caminho do dataset ---
 DATA_PATH = Path(__file__).parent.parent / "data" / "names_training.json"
-with open(DATA_PATH, "r", encoding="utf-8") as f:
-    TRAIN_DATA = json.load(f)
+
+# --- Criar pasta para checkpoints ---
+CHECKPOINT_DIR = Path(__file__).parent.parent / "models" / "name_ner" / "checkpoints"
+CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
+
+# --- Função para carregar dados em batches do disco ---
+def load_data_in_batches(path, batch_size=5000):
+    """Carrega os dados em pedaços (chunks) para não sobrecarregar memória."""
+    with open(path, "r", encoding="utf-8") as f:
+        all_data = json.load(f)
+    for i in range(0, len(all_data), batch_size):
+        yield all_data[i:i + batch_size]
 
 # --- Criar modelo vazio para português ---
 nlp = spacy.blank("pt")
@@ -25,30 +38,48 @@ ner.add_label("PERSON")
 # --- Inicializar o modelo ---
 optimizer = nlp.initialize()
 
+# --- Parâmetros de treino ---
+EPOCHS = 5
+INITIAL_BATCH = 256
+MAX_BATCH = 512
+iteration = 0
+
 # --- Treinamento ---
-EPOCHS = 20
-BATCH_SIZE = 8
-
 for epoch in range(EPOCHS):
-    random.shuffle(TRAIN_DATA)
     losses = {}
+    print(f"\n=== Epoch {epoch + 1}/{EPOCHS} ===")
     
-    # Treinamento por batches
-    batches = minibatch(TRAIN_DATA, size=BATCH_SIZE)
-    for batch in batches:
-        examples = [Example.from_dict(nlp.make_doc(text), annots) for text, annots in batch]
-        nlp.update(examples, sgd=optimizer, losses=losses)
-    
-    print(f"Epoch {epoch+1}/{EPOCHS} - Losses: {losses}")
+    for batch_data in load_data_in_batches(DATA_PATH, batch_size=1000):
+        random.shuffle(batch_data)
+        # --- Gerar lista finita de batch_sizes ---
+        # limite de 20 incrementos, por exemplo
+        batch_sizes = list(islice(compounding(INITIAL_BATCH, MAX_BATCH, 1.5), 20))
+        batch_sizes = [min(int(b), len(batch_data)) for b in batch_sizes if b <= len(batch_data)]
+        
+        for batch_size in batch_sizes:
+            minibatches = minibatch(batch_data, size=batch_size)
+            print(f"Gerando minibatches para batch_size={batch_size} com {len(batch_data)} exemplos")
+            for mb in minibatches:
+                iteration += 1
+                examples = [Example.from_dict(nlp.make_doc(text), annots) for text, annots in mb]
+                nlp.update(examples, sgd=optimizer, losses=losses)
+                print(f"Epoch {epoch + 1}, Iteração {iteration}, Tamanho do batch: {len(mb)}, Losses: {losses}")
 
-# --- Salvar modelo treinado ---
+    print(f"Epoch {epoch + 1} - Losses: {losses}")
+    
+    # --- Salvar checkpoint a cada epoch ---
+    checkpoint_path = CHECKPOINT_DIR / f"epoch_{epoch + 1}"
+    nlp.to_disk(checkpoint_path)
+    print(f"Checkpoint salvo em: {checkpoint_path}")
+
+
+# --- Salvar modelo final ---
 MODEL_PATH = Path(__file__).parent.parent / "models" / "name_ner"
 MODEL_PATH.mkdir(parents=True, exist_ok=True)
 nlp.to_disk(MODEL_PATH)
-print(f"\nModelo treinado salvo em: {MODEL_PATH}")
+print(f"\nModelo final salvo em: {MODEL_PATH}")
 
 # --- Teste rápido ---
-print("\nTeste rápido de reconhecimento de nomes:")
 test_texts = [
     "Cliente João Pedro Pereira Silva comprou um item",
     "Entregar pacote para Ruan Silva Ribeiro",
@@ -60,6 +91,7 @@ test_texts = [
     "ou 1 CORREIOS ..m CORREIOS NF 112233 Pedido 0 Peso o 1000 II INI HI Nome Legível Documento Destinatário Volume 1 João Dias Rua Jonas da Fonseca, 250 Condomínio azul, apartamento 112 24451 260 São Gonçalo R J uu Remotento SIGEP WEB Ambiente de Homologação"
 ]
 
+print("\nTeste rápido de reconhecimento de nomes:")
 for text in test_texts:
     doc = nlp(text)
     names = [ent.text for ent in doc.ents if ent.label_ == "PERSON"]
