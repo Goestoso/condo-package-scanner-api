@@ -19,6 +19,28 @@ first_names = list(first_names)
 last_names = list(last_names)
 print(f"Coletados {len(first_names)} primeiros nomes e {len(last_names)} sobrenomes")
 
+# --- Nomes e sobrenomes adicionais que geralmente escapam ---
+extra_first_names = [
+    "Mauro", "Anderson", "Fabiana", "Félix", "Sérgio", 
+    "Aline", "Cláudio", "Cléber", "Fábio", "Verônica", 
+    "Osvaldo", "Meire", "Neusa", "Fagner", "Ruan", "Roberto"
+]
+
+extra_last_names = [
+    "Góes", "Aguiar", "Magalhães", "Coelho", "Ruiz", "Diniz",
+    "Xavier", "Aparecido", "Guimarães", "Maia", "Tavares"
+]
+
+# --- Atualizar listas ---
+first_names.extend(extra_first_names)
+last_names.extend(extra_last_names)
+
+# Remover duplicados e ordenar para manter limpo
+first_names = sorted(set(first_names))
+last_names = sorted(set(last_names))
+
+print(f"Agora temos {len(first_names)} primeiros nomes e {len(last_names)} sobrenomes")
+
 # --- Funções auxiliares ---
 def remove_accents(text):
     return ''.join(c for c in unicodedata.normalize('NFD', text)
@@ -60,24 +82,31 @@ NUM_EXAMPLES = 10000
 
 while len(examples) < NUM_EXAMPLES:
     name = generate_name()
-    address = faker.address().replace("\n", ", ")
+    address = faker.street_name()
+    number = str(random.randint(1, 9999))  # <--- número da rua
+    city = faker.city()
     cep = faker.postcode()
     
     context = random.choice(contexts)
-    text = context.format(name=name, address=address, cep=cep)
+    text = context.format(
+        name=name,
+        address=address,
+        number=number,
+        city=city,
+        cep=cep
+    )
 
-    # Inserir ruído aleatório após a criação do texto
+    # Inserir ruído aleatório
     if random.random() < 0.1:
         text += f" {random.randint(1000, 9999)}"
 
-    # Aleatorizar maiúsculas/minúsculas ou remover acentos **sem quebrar offsets**
+    # Aleatorizar maiúsculas/minúsculas ou remover acentos
     final_text = text
     if random.random() < 0.2:
-        # aplicar transformações no texto inteiro para manter offsets
         final_text = remove_accents(final_text)
-        # ou random_case(final_text) se quiser variar capitalização
-    
-    # Calcular offset de forma robusta
+        # ou usar random_case(final_text)
+
+    # Calcular offset
     start_name = final_text.find(name)
     if start_name != -1:
         end_name = start_name + len(name)
@@ -86,6 +115,7 @@ while len(examples) < NUM_EXAMPLES:
         entities = []
 
     examples.append((final_text, {"entities": entities}))
+
 
 # --- Salvar dataset ---
 OUTPUT_PATH = Path(__file__).parent.parent / "data" / "names_training.json"

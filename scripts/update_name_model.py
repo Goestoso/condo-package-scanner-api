@@ -1,80 +1,97 @@
 import spacy
 from spacy.training import Example
+from itertools import islice
 from spacy.util import minibatch, compounding
 from pathlib import Path
 import json
 import random
-from faker import Faker
 
-faker = Faker("pt_BR")
+spacy.require_gpu()
 
-# --- Caminhos ---
-MODEL_PATH = Path(__file__).parent.parent / "models" / "name_ner"  # modelo existente
-DATA_CONTEXTS_PATH = Path(__file__).parent.parent / "data" / "names_contexts.json"
+# --- Caminho do dataset ---
+DATA_PATH = Path(__file__).parent.parent / "data" / "names_training.json"
 
-# --- Nomes novos que queremos adicionar ---
-novos_first_names = ["Mauro", "Leandro", "Fabiana", "Marcio", "Roberto", "Cristina"]
-novos_last_names = ["Guimarães", "Alcântara", "Coelho"]
+# --- Caminho do modelo existente ---
+MODEL_PATH = Path(__file__).parent.parent / "models" / "name_ner"
 
-# --- Carregar contextos ---
-with open(DATA_CONTEXTS_PATH, "r", encoding="utf-8") as f:
-    contexts = json.load(f)
+# --- Criar pasta para checkpoints ---
+CHECKPOINT_DIR = MODEL_PATH / "checkpoints"
+CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
 
-# --- Funções de geração de nomes ---
-def generate_long_name(first_names, last_names):
-    first_part = " ".join(random.choice(first_names) for _ in range(random.randint(2, 3)))
-    last_part = " ".join(random.choice(last_names) for _ in range(random.randint(2, 3)))
-    return f"{first_part} {last_part}"
+# --- Função para carregar dados em batches ---
+def load_data_in_batches(path, batch_size=5000):
+    with open(path, "r", encoding="utf-8") as f:
+        all_data = json.load(f)
+    for i in range(0, len(all_data), batch_size):
+        yield all_data[i:i + batch_size]
 
-def generate_name():
-    r = random.random()
-    if r < 0.2:
-        return random.choice(novos_first_names)
-    elif r < 0.6:
-        return f"{random.choice(novos_first_names)} {random.choice(novos_last_names)}"
-    elif r < 0.9:
-        return f"{random.choice(novos_first_names)} {random.choice(novos_last_names)} {random.choice(novos_last_names)}"
-    else:
-        return generate_long_name(novos_first_names, novos_last_names)
-
-# --- Gerar exemplos para treinamento incremental ---
-examples = []
-NUM_EXAMPLES = 200  # ajustar conforme necessário
-for _ in range(NUM_EXAMPLES):
-    name = generate_name()
-    address = faker.address().replace("\n", ", ")
-    cep = faker.postcode()
-    context = random.choice(contexts)
-    text = context.format(name=name, address=address, cep=cep)
-
-    try:
-        start_name = text.index(name)
-        end_name = start_name + len(name)
-        entities = [(start_name, end_name, "PERSON")]
-        examples.append((text, {"entities": entities}))
-    except ValueError:
-        pass  # fallback se nome não estiver no texto
-
-print(f"{len(examples)} exemplos gerados para novos nomes.")
-
-# --- Carregar modelo existente ---
+# --- Carregar modelo existente em vez de criar novo ---
+print(f"Carregando modelo existente de: {MODEL_PATH}")
 nlp = spacy.load(MODEL_PATH)
-ner = nlp.get_pipe("ner")
+
+# --- Garantir que o NER esteja presente ---
+if "ner" not in nlp.pipe_names:
+    ner = nlp.add_pipe("ner")
+else:
+    ner = nlp.get_pipe("ner")
+
+# --- Adicionar label (não dá erro se já existir) ---
+ner.add_label("PERSON")
+
+# --- Inicializar otimizador no modo de continuação ---
+optimizer = nlp.resume_training()
+
+# --- Parâmetros de treino ---
+EPOCHS = 5   # pode usar menos, já que é "refino"
+INITIAL_BATCH = 256
+MAX_BATCH = 512
+iteration = 0
 
 # --- Treinamento incremental ---
-optimizer = nlp.resume_training()
-EPOCHS = 5
-BATCH_SIZE = 16
-
 for epoch in range(EPOCHS):
-    random.shuffle(examples)
     losses = {}
-    batches = minibatch(examples, size=BATCH_SIZE)
-    for batch in batches:
-        batch_examples = [Example.from_dict(nlp.make_doc(text), annots) for text, annots in batch]
-        nlp.update(batch_examples, sgd=optimizer, losses=losses)
-    print(f"Epoch {epoch + 1}/{EPOCHS} - Losses: {losses}")
+    print(f"\n=== Epoch {epoch + 1}/{EPOCHS} ===")
+    
+    for batch_data in load_data_in_batches(DATA_PATH, batch_size=1000):
+        random.shuffle(batch_data)
+        batch_sizes = list(islice(compounding(INITIAL_BATCH, MAX_BATCH, 1.3), 20))
+        batch_sizes = [min(int(b), len(batch_data)) for b in batch_sizes if b <= len(batch_data)]
+        
+        for batch_size in batch_sizes:
+            minibatches = minibatch(batch_data, size=batch_size)
+            print(f"Gerando minibatches para batch_size={batch_size} com {len(batch_data)} exemplos")
+            for mb in minibatches:
+                iteration += 1
+                examples = [Example.from_dict(nlp.make_doc(text), annots) for text, annots in mb]
+                nlp.update(examples, sgd=optimizer, losses=losses)
+                print(f"Epoch {epoch + 1}, Iteração {iteration}, Tamanho do batch: {len(mb)}, Losses: {losses}")
+
+    print(f"Epoch {epoch + 1} - Losses: {losses}")
+    
+    # --- Salvar checkpoint a cada epoch ---
+    checkpoint_path = CHECKPOINT_DIR / f"epoch_{epoch + 1}"
+    nlp.to_disk(checkpoint_path)
+    print(f"Checkpoint salvo em: {checkpoint_path}")
 
 # --- Salvar modelo atualizado ---
 nlp.to_disk(MODEL_PATH)
-print(f"Modelo atualizado salvo em: {MODEL_PATH}")
+print(f"\nModelo atualizado salvo em: {MODEL_PATH}")
+
+# --- Teste rápido ---
+test_texts = [
+    "Cliente João Pedro Pereira Silva comprou um item",
+    "Entregar pacote para Ruan Silva Ribeiro",
+    "Maria Costa Dias recebeu o pedido",
+    "rua Rosa Vermelha, 315, Osasco, São Paulo João Dias Araújo Filho Remessa 12345",
+    "Fagner Ruiz",
+    "1035 Séne Emissão 2023 Rua Jonas Fonseca, 250, Condominio marrom apt 404, São Gonçalo, Rio Janeiro Ruan Rodrigues Silva Bairro Colubande CEP 24451 260 ESSE UMA Encontre mais próxima Hub ENETENTE Rua Ébano, 111, Térreo, Rio Janeiro CEP 20930 060 RIL",
+    "Moldes De Vestido Pet Nessas presa Destinatário Mauro de uz Rua dos Pregos 476 Condomíno Ip Apt 701 13431 112 São Paulo Remetente ueitom vitor lua Tiradentes 86 casa Campos 37160 000 Minas Garais",
+    "..m 1000 INI Destinatário João Dias Rua Jonas Fonseca, 250 Condomínio azul, apartamento 112 24451 260 São Gonçalo Remotento SIGEP WEB Ambiente Homologação"
+]
+
+print("\nTeste rápido de reconhecimento de nomes:")
+for text in test_texts:
+    doc = nlp(text)
+    names = [ent.text for ent in doc.ents if ent.label_ == "PERSON"]
+    print(f"Texto: '{text}' -> Nomes detectados: {names}")
+
