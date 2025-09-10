@@ -21,21 +21,62 @@ class Sticker:
     # Stop words irrelevantes
     STOP_WORDS = [
         "Shopee", "XPRESS", "LEVAR", "Agência", "Soc", "Separação",
-        "LM Hub", "Correios", "Pedido:", "NF:", "BR", "O)", "Nome Legível",
-        "Documento", "DANFE SIMPLIFICADO"
+        "Correios", "Pedido", "NF", "Nome Legível",
+        "Documento", "DANFE", "Volume", "Envio",
+        "Recebimento", "Confirmação", "Expressa", "Finalizado",
+        "Rastreio", "Entrega", "Etiqueta", "Pacote",
+        "Simplificado", "Saída", "Peso", "Pedido", "Volume",
+        "AMAZON", "Loggi", "SEDEX", "Shein", "Objeto"
     ]
 
     @staticmethod
-    def sanitize(text: str) -> str:
+    def sanitize(text: str, stop_words=None, min_words=2) -> str:
         """
-        Remove caracteres estranhos, múltiplos espaços e símbolos desnecessários.
-        Mantém letras, números e pontuação básica.
+        Limpa o texto de forma abrangente:
+        - Remove caracteres estranhos (mantendo letras, números, vírgulas e pontos)
+        - Normaliza múltiplos espaços
+        - Remove stop words irrelevantes
+        - Remove palavras de 2 caracteres
+        - Remove números irrelevantes:
+            * números longos (>5 dígitos)
+            * números com letras (ex: 230811BNH7M33K)
+        - Retorna vazio se a linha tiver menos que `min_words` palavras
         """
-        # remover caracteres não alfanuméricos, exceto espaços, vírgulas e pontos
+        if stop_words is None:
+            stop_words = []
+            
+        # Remover stop words
+        for sw in stop_words:
+            pattern = re.compile(rf"{re.escape(sw)}\b", re.IGNORECASE)
+            text = pattern.sub("", text)
+
+
+        # Remover caracteres não alfanuméricos, exceto espaços, vírgulas e pontos
         text = re.sub(r"[^a-zA-Z0-9á-úÁ-ÚçÇ.,\s]", " ", text)
-        # substituir múltiplos espaços por um único
-        text = re.sub(r"\s+", " ", text)
-        return text.strip()
+
+        # Normalizar múltiplos espaços
+        text = re.sub(r"\s+", " ", text).strip()
+
+        # Remover números com letras (códigos, rastreio)
+        text = re.sub(r'\b\w*\d+\w*\b', lambda m: '' if re.search(r'\D', m.group()) else m.group(), text)
+
+        # Remover números puros longos (>5 dígitos)
+        text = re.sub(r'\b\d{6,}\b', '', text)
+
+        # Remover palavras de 2 caracteres
+        text = " ".join([w for w in text.split() if len(w) > 2])
+        
+        # Remover links
+        text = re.sub(r'\b\w+\.\w+(\.\w+)?\b', '', text)
+
+        # Normalizar múltiplos espaços novamente
+        text = re.sub(r'\s+', ' ', text).strip()
+
+        # Descartar linhas muito curtas
+        if len(text.split()) < min_words:
+            return ""
+
+        return text
 
     def __init__(self, image: str):
         base_dir = Path(__file__).parent
@@ -64,14 +105,9 @@ class Sticker:
         3. Fallback com fuzzy matching nas linhas úteis
         """
         # Quebrar em linhas e limpar
-        lines = [self.sanitize(l.strip()) for l in self.__text.splitlines() if l.strip()]
-        useful_lines = []
-        for line in lines:
-            if any(sw.lower() in line.lower() for sw in self.STOP_WORDS):
-                continue
-            if len(line.split()) < 2:  # descartar linhas muito curtas
-                continue
-            useful_lines.append(line)
+        lines = [Sticker.sanitize(l, stop_words=Sticker.STOP_WORDS) for l in self.__text.splitlines()]
+        useful_lines = [l for l in lines if l]  # mantém só linhas não vazias
+
 
         # Combinar linhas curtas próximas (possível fragmento de nome)
         combined_lines = []
