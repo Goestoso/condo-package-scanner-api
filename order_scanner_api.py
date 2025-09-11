@@ -6,9 +6,9 @@ if __name__ == '__main__':
         "Rua Jonas da Fonseca, 250, Condomínio azul, apartamento 112"
     ]
 
-    sticker = Sticker("ml.jpg")
+    sticker = Sticker("Ana.jpg")
 
     print(Sticker.sanitize(sticker.text))
 
-    sticker.extract_recipient()
+    sticker.extract_recipient_name()
     print(f"Nome detectado: {sticker.recipient_name}")

@@ -1,7 +1,7 @@
 from PIL import Image
 import pytesseract
 from pathlib import Path
-from rapidfuzz import process
+from rapidfuzz import process, fuzz
 import spacy, re
 
 
@@ -15,7 +15,8 @@ class Sticker:
         "João Dias",
         "Maria Oliveira",
         "Ruan Rodrigues Da Silva",
-        "Ana dos Anjos"
+        "Ana dos Anjos",
+        "Ana Aguiar Moraes"
     ]
 
     # Stop words irrelevantes
@@ -28,6 +29,8 @@ class Sticker:
         "Simplificado", "Saída", "Peso", "Pedido", "Volume",
         "AMAZON", "Loggi", "SEDEX", "Shein", "Objeto"
     ]
+
+    STOP_NAME_TOKENS = {"casa", "cep", "endereco", "entrega", "pedido", "ltda", "apartamento", "bloco"}
 
     @staticmethod
     def sanitize(text: str, stop_words=None, min_words=2) -> str:
@@ -97,19 +100,17 @@ class Sticker:
     def recipient_name(self):
         return self.__recipient_name
 
-    def extract_recipient(self):
+    def extract_recipient_name(self):
         """
         Extrai o nome do destinatário usando:
-        1. Sanitização linha a linha
-        2. NER treinado
-        3. Fallback com fuzzy matching nas linhas úteis
+        1. NER para detectar candidatos
+        2. Fuzzy matching para mapear candidatos aos nomes reais
         """
         # Quebrar em linhas e limpar
         lines = [Sticker.sanitize(l, stop_words=Sticker.STOP_WORDS) for l in self.__text.splitlines()]
-        useful_lines = [l for l in lines if l]  # mantém só linhas não vazias
+        useful_lines = [l for l in lines if l]
 
-
-        # Combinar linhas curtas próximas (possível fragmento de nome)
+        # Combinar linhas curtas (pode formar fragmentos de nomes)
         combined_lines = []
         buffer = ""
         for line in useful_lines:
@@ -117,56 +118,66 @@ class Sticker:
                 buffer += " " + line
             else:
                 buffer = line
-            # se a linha combinada tiver mais de 2 palavras, considerar
             if len(buffer.split()) >= 3:
                 combined_lines.append(buffer)
                 buffer = ""
         if buffer:
             combined_lines.append(buffer)
 
-        # Rodar NER no texto completo e nas linhas combinadas
+        # Rodar NER
         candidates = []
-
-        # 1. NER no texto completo
         doc_full = self.nlp("\n".join(combined_lines))
         for ent in doc_full.ents:
             if ent.label_ == "PERSON":
                 candidates.append(ent.text)
 
-        # 2. NER linha a linha (fallback adicional)
         for line in combined_lines:
             doc = self.nlp(line)
             for ent in doc.ents:
                 if ent.label_ == "PERSON":
                     candidates.append(ent.text)
 
-        # Filtrar candidatos válidos (descarta números e fragmentos curtos)
-        candidates = [c for c in candidates if len(c.split()) > 1 and not any(ch.isdigit() for ch in c)]
+        candidates = list(set(candidates))
 
         print("\n[DEBUG] Candidatos detectados pelo NER:")
         for c in candidates:
             print("   🧍", c)
 
-        # Se houver candidatos, escolher o melhor via fuzzy
-        if candidates:
-            
-            best_line = max(
-                candidates,
-                key=lambda l: process.extractOne(l, self.TEST_MORADORES)[1],
-                default=""
-            )
-        else:
-            # fallback absoluto: pegar linha útil mais longa
-            best_line = max(useful_lines, key=lambda l: len(l.split()), default="")
+        # Pré-filtrar candidatos sem excluir completamente
+        cleaned_candidates = []
+        for c in candidates:
+            tokens = [t for t in c.split() if t.lower() not in self.STOP_NAME_TOKENS]
+            cleaned = " ".join(tokens)
+            if len(cleaned.split()) > 1 and not any(ch.isdigit() for ch in cleaned):
+                cleaned_candidates.append(cleaned)
 
-        if best_line:
-            best_match = process.extractOne(best_line, self.TEST_MORADORES)
-            if best_match and best_match[1] > 85:
-                self.__recipient_name = best_match[0]
-            else:
-                self.__recipient_name = best_line
+
+        # Fuzzy matching para todos os candidatos
+        best_candidate, best_match, best_score = None, None, 0
+        for cand in candidates:
+            match = process.extractOne(
+                cand,
+                self.TEST_MORADORES,
+                scorer=fuzz.token_set_ratio
+            )
+            # Debug detalhado para todos os candidatos
+            if match:
+                print(f"[DEBUG] 🔎 Candidato: '{cand}' → Melhor match: '{match[0]}' (score {match[1]})")
+
+            if match and match[1] > best_score:
+                best_candidate = cand
+                best_match = match
+                best_score = match[1]
+
+        # Definir o nome final
+        if best_match and best_score > 70:
+            # Sempre usar o nome real da lista de moradores
+            self.__recipient_name = best_match[0]
+            print(f"[INFO] Nome final detectado pelo Fuzzy: {self.__recipient_name}")
         else:
-            self.__recipient_name = ""
+            # Fallback: pegar o candidato do NER (ou vazio se não houver)
+            self.__recipient_name = best_candidate if best_candidate else ""
+            print(f"[INFO] Fallback nome detectado: {self.__recipient_name}")
 
     def __str__(self):
         return self.text
