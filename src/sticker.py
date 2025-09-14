@@ -33,29 +33,36 @@ class Sticker:
     STOP_NAME_TOKENS = {"casa", "cep", "endereco", "entrega", "pedido", "ltda", "apartamento", "bloco"}
 
     @staticmethod
-    def sanitize(text: str, stop_words=None, min_words=2) -> str:
+    def sanitize(text: str, stop_words=STOP_WORDS, min_words=2, for_ner=True) -> str:
         """
-        Limpa o texto de forma abrangente:
-        - Remove caracteres estranhos (mantendo letras, números, vírgulas e pontos)
+        Limpa o texto do OCR para NER ou exibição:
+        
+        - Remove caracteres irrelevantes (mantendo letras, números)
         - Normaliza múltiplos espaços
         - Remove stop words irrelevantes
-        - Remove palavras de 2 caracteres
         - Remove números irrelevantes:
-            * números longos (>5 dígitos)
+            * longos (>5 dígitos)
             * números com letras (ex: 230811BNH7M33K)
         - Retorna vazio se a linha tiver menos que `min_words` palavras
+        
+        Parâmetro `for_ner`:
+            - True: substitui vírgulas e pontos por espaço para facilitar tokenização do NER
+            - False: mantém pontuação original
         """
         if stop_words is None:
             stop_words = []
-            
+
         # Remover stop words
         for sw in stop_words:
             pattern = re.compile(rf"{re.escape(sw)}\b", re.IGNORECASE)
             text = pattern.sub("", text)
 
-
-        # Remover caracteres não alfanuméricos, exceto espaços, vírgulas e pontos
+        # Remover caracteres não alfanuméricos, mantendo vírgulas e pontos
         text = re.sub(r"[^a-zA-Z0-9á-úÁ-ÚçÇ.,\s]", " ", text)
+
+        # Substituir vírgulas/pontos por espaço apenas se for para NER
+        if for_ner:
+            text = re.sub(r"[.,]", " ", text)
 
         # Normalizar múltiplos espaços
         text = re.sub(r"\s+", " ", text).strip()
@@ -68,7 +75,7 @@ class Sticker:
 
         # Remover palavras de 2 caracteres
         text = " ".join([w for w in text.split() if len(w) > 2])
-        
+
         # Remover links
         text = re.sub(r'\b\w+\.\w+(\.\w+)?\b', '', text)
 
@@ -80,6 +87,7 @@ class Sticker:
             return ""
 
         return text
+
 
     def __init__(self, image: str):
         base_dir = Path(__file__).parent
