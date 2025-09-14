@@ -49,8 +49,34 @@ class Sticker:
             - True: substitui vírgulas e pontos por espaço para facilitar tokenização do NER
             - False: mantém pontuação original
         """
+        
+        # Detectar CEPs e juntar dígitos
+        def normalize_ceps(text: str) -> str:
+            # Regex: 5 dígitos + opcional hífen/espaço + 3 dígitos
+            def cep_replacer(match):
+                digits = re.sub(r'\D', '', match.group())  # remove tudo que não é número
+                if len(digits) == 8:
+                    return digits
+                return match.group()  # se não for 8 dígitos, mantém como está
+
+            return re.sub(r'\b\d{5}[-\s]?\d{3}\b', cep_replacer, text)
+        
+         # --- Normalizar "s/n" para "semnumero" ---
+        def normalize_sem_numero(text: str) -> str:
+            # cobre variações: s/n, S/N, s-n, s n, sem numero, sem número
+            return re.sub(
+                r"\b(s[\s\-\/]?n|sem\s+n[úu]mero)\b",
+                "semnumero",
+                text,
+                flags=re.IGNORECASE
+            )
+
+        
         if stop_words is None:
             stop_words = []
+            
+        # Normalizar "sem número" primeiro
+        text = normalize_sem_numero(text)
 
         # Remover stop words
         for sw in stop_words:
@@ -81,6 +107,9 @@ class Sticker:
 
         # Normalizar múltiplos espaços novamente
         text = re.sub(r'\s+', ' ', text).strip()
+        
+        # Dentro do sanitize
+        text = normalize_ceps(text)
 
         # Descartar linhas muito curtas
         if len(text.split()) < min_words:

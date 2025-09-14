@@ -7,6 +7,6 @@ sys.path.append(str(Path(__file__).parent.parent / "src"))
 # Agora dá para importar o módulo
 from sticker import Sticker
 
-text = "Moldes Vestido Pet Nessas presa Destinatário Mauro Rua dos Pregos 476 Condomíno Apt 701 13431 112 São Paulo Remetente ueitom vitor lua Tiradentes casa Campos 37160 000 Minas Garais"
+text = "1035 Séne Emissão 2023 Rua Jonas Fonseca 250 Condominio marrom apt 404 São Gonçalo Rio Janeiro Ruan Rodrigues Silva Bairro Colubande CEP 24451 260 ESSE UMA Encontre mais próxima Hub ENETENTE Rua Ébano 111 Térreo Rio Janeiro CEP 20930 060 RIL"
 
 print(Sticker.sanitize(text))

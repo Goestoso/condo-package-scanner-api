@@ -1,0 +1,9 @@
+[
+  "Destinatário", "Remetente", "Emissão", "Remessa", "Destino", "Endereço",
+  "Cliente", "Fornecedor", "Entrega", "Bairro", "Complemento", "Nota",
+  "Fatura", "Pedido", "Casa", "Setor", "Quadra", "Lote", "Produto", "Peso", 
+  "Cidade", "Estado", "UF", "Recebimento", "Expedição", "Envio", "Comprimento",
+  "Cadastro", "Documento", "Referência", "Identificação", "Empresa", "Contato",
+  "Telefone", "Celular", "Email", "Agência", "Conta", "Banco", "Número",
+  "Data", "Hora", "Observação", "Mensagem", "Nota Fiscal", "Registro", "Altura"
+]
