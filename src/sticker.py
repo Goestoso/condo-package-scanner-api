@@ -4,10 +4,22 @@ from pathlib import Path
 from rapidfuzz import process, fuzz
 import spacy, re
 
+# Siglas e nomes oficiais
+STATES = {
+    "AC": "ACRE", "AL": "ALAGOAS", "AP": "AMAPÁ", "AM": "AMAZONAS",
+    "BA": "BAHIA", "CE": "CEARÁ", "DF": "DISTRITO FEDERAL", "ES": "ESPÍRITO SANTO",
+    "GO": "GOIÁS", "MA": "MARANHÃO", "MT": "MATO GROSSO", "MS": "MATO GROSSO DO SUL",
+    "MG": "MINAS GERAIS", "PA": "PARÁ", "PB": "PARAÍBA", "PR": "PARANÁ",
+    "PE": "PERNAMBUCO", "PI": "PIAUÍ", "RJ": "RIO DE JANEIRO", "RN": "RIO GRANDE DO NORTE",
+    "RS": "RIO GRANDE DO SUL", "RO": "RONDÔNIA", "RR": "RORAIMA", "SC": "SANTA CATARINA",
+    "SP": "SÃO PAULO", "SE": "SERGIPE", "TO": "TOCANTINS"
+}
 
 class Sticker:
 
     __recipient_name = ""
+    
+    __cep = set()  # atributo para guardar o CEP
 
     # Lista de moradores para teste (apenas para fuzzy matching)
     TEST_MORADORES = [
@@ -27,91 +39,126 @@ class Sticker:
         "Recebimento", "Confirmação", "Expressa", "Finalizado",
         "Rastreio", "Entrega", "Etiqueta", "Pacote",
         "Simplificado", "Saída", "Peso", "Pedido", "Volume",
-        "AMAZON", "Loggi", "SEDEX", "Shein", "Objeto"
+        "AMAZON", "Loggi", "SEDEX", "Shein", "Objeto", "CEP"
     ]
 
     STOP_NAME_TOKENS = {"casa", "cep", "endereco", "entrega", "pedido", "ltda", "apartamento", "bloco"}
 
     @staticmethod
-    def sanitize(text: str, stop_words=STOP_WORDS, min_words=2, for_ner=True) -> str:
+    def sanitize(text: str, stop_words=STOP_WORDS, min_words=2, for_ner=True, clear_cep=False) -> str:
         """
         Limpa o texto do OCR para NER ou exibição:
         
         - Remove caracteres irrelevantes (mantendo letras, números)
         - Normaliza múltiplos espaços
+        - Normaliza estados em siglas (ex: São Paulo vira SP)
         - Remove stop words irrelevantes
         - Remove números irrelevantes:
-            * longos (>5 dígitos)
+            * longos (>8 dígitos)
             * números com letras (ex: 230811BNH7M33K)
         - Retorna vazio se a linha tiver menos que `min_words` palavras
-        
+
         Parâmetro `for_ner`:
             - True: substitui vírgulas e pontos por espaço para facilitar tokenização do NER
             - False: mantém pontuação original
+            
+        Parâmetro `clear_cep`:
+            - True: remove os ceps
+            - False: mantém os ceps
         """
-        
-        # Detectar CEPs e juntar dígitos
-        def normalize_ceps(text: str) -> str:
-            # Regex: 5 dígitos + opcional hífen/espaço + 3 dígitos
+        import re
+        from rapidfuzz import process, fuzz
+
+        # --- Normalizar CEPs ---
+        def normalize_ceps(txt: str) -> str:
             def cep_replacer(match):
-                digits = re.sub(r'\D', '', match.group())  # remove tudo que não é número
+                digits = re.sub(r'\D', '', match.group())
                 if len(digits) == 8:
                     return digits
-                return match.group()  # se não for 8 dígitos, mantém como está
+                return match.group()
+            return re.sub(r'\b\d{5}[-\s]?\d{3}\b', cep_replacer, txt)
 
-            return re.sub(r'\b\d{5}[-\s]?\d{3}\b', cep_replacer, text)
-        
-         # --- Normalizar "s/n" para "semnumero" ---
-        def normalize_sem_numero(text: str) -> str:
-            # cobre variações: s/n, S/N, s-n, s n, sem numero, sem número
+        # --- Normalizar "s/n" para "semnumero" ---
+        def normalize_sem_numero(txt: str) -> str:
             return re.sub(
                 r"\b(s[\s\-\/]?n|sem\s+n[úu]mero)\b",
                 "semnumero",
-                text,
+                txt,
                 flags=re.IGNORECASE
             )
 
-        
+        # --- Normalizar estados ---
+        def normalize_state(raw_state: str):
+            if not raw_state:
+                return None
+            s_clean = raw_state.strip().upper()
+            # match exato sigla
+            if s_clean in STATES:
+                return s_clean
+            # match exato nome completo
+            for sig, name in STATES.items():
+                if s_clean == name.upper():
+                    return sig
+            # fuzzy match
+            names = list(STATES.values())
+            match, score, idx = process.extractOne(s_clean, names, scorer=fuzz.token_sort_ratio)
+            if score >= 75:
+                return list(STATES.keys())[idx]
+            return None
+
         if stop_words is None:
             stop_words = []
-            
-        # Normalizar "sem número" primeiro
+
         text = normalize_sem_numero(text)
 
-        # Remover stop words
+        # remover stop words
         for sw in stop_words:
-            pattern = re.compile(rf"{re.escape(sw)}\b", re.IGNORECASE)
-            text = pattern.sub("", text)
+            text = re.sub(rf"{re.escape(sw)}\b", "", text, flags=re.IGNORECASE)
 
-        # Remover caracteres não alfanuméricos, mantendo vírgulas e pontos
+        # remover caracteres irrelevantes, manter vírgulas/pontos
         text = re.sub(r"[^a-zA-Z0-9á-úÁ-ÚçÇ.,\s]", " ", text)
-
-        # Substituir vírgulas/pontos por espaço apenas se for para NER
         if for_ner:
             text = re.sub(r"[.,]", " ", text)
 
-        # Normalizar múltiplos espaços
         text = re.sub(r"\s+", " ", text).strip()
 
-        # Remover números com letras (códigos, rastreio)
+        # remover números com letras
         text = re.sub(r'\b\w*\d+\w*\b', lambda m: '' if re.search(r'\D', m.group()) else m.group(), text)
 
-        # Remover números puros longos (>5 dígitos)
-        text = re.sub(r'\b\d{6,}\b', '', text)
+        # remover números longos (>8 dígitos)
+        text = re.sub(r'\b\d{9,}\b', '', text)
 
-        # Remover palavras de 2 caracteres
-        text = " ".join([w for w in text.split() if len(w) > 2])
+        # remover palavras de 2 caracteres
+        words = [w for w in text.split() if len(w) > 2]
 
-        # Remover links
-        text = re.sub(r'\b\w+\.\w+(\.\w+)?\b', '', text)
+        # remover links
+        words = [w for w in words if not re.match(r'\w+\.\w+(\.\w+)?', w)]
 
-        # Normalizar múltiplos espaços novamente
-        text = re.sub(r'\s+', ' ', text).strip()
-        
-        # Dentro do sanitize
+        # normalizar CEPs
+        text = " ".join(words)
         text = normalize_ceps(text)
 
-        # Descartar linhas muito curtas
+        if clear_cep:
+            text = re.sub(r'\b\d{8}\b', '', text)
+
+        # normalizar estados multi-word
+        words = text.split()
+        i = 0
+        while i < len(words):
+            matched = False
+            # tentar n-grams 3,2,1
+            for n in [3, 2, 1]:
+                if i + n <= len(words):
+                    span = " ".join(words[i:i+n])
+                    norm = normalize_state(span)
+                    if norm:
+                        words[i:i+n] = [norm]
+                        matched = True
+                        break
+            i += 1 if not matched else 1
+
+        text = " ".join(words)
+
         if len(text.split()) < min_words:
             return ""
 
@@ -120,14 +167,7 @@ class Sticker:
 
     def __init__(self, image: str):
         base_dir = Path(__file__).parent
-        image_path = base_dir.parent / "assets" / image
-
-        img = Image.open(str(image_path))
-        self.__text: str = str(pytesseract.image_to_string(img, lang="por"))
-
-        # carregar modelo treinado de nomes
-        model_path = base_dir.parent / "models" / "name_ner"
-        self.nlp = spacy.load(model_path)
+        self.__image_path = base_dir.parent / "assets" / image
 
     @property
     def text(self):
@@ -136,6 +176,18 @@ class Sticker:
     @property
     def recipient_name(self):
         return self.__recipient_name
+    
+    @property
+    def cep(self):
+        return self.__cep
+    
+    @property
+    def image_path(self):
+        return self.__image_path
+        
+    def extract_text(self):
+        img = Image.open(str(self.image_path))
+        self.__text: str = str(pytesseract.image_to_string(img, lang="por"))
 
     def extract_recipient_name(self):
         """
@@ -143,8 +195,13 @@ class Sticker:
         1. NER para detectar candidatos
         2. Fuzzy matching para mapear candidatos aos nomes reais
         """
+        
+        # carregar modelo treinado de nomes
+        model_path = base_dir.parent / "models" / "name_ner"
+        self.nlp = spacy.load(model_path)
+        
         # Quebrar em linhas e limpar
-        lines = [Sticker.sanitize(l, stop_words=Sticker.STOP_WORDS) for l in self.__text.splitlines()]
+        lines = [Sticker.sanitize(l, stop_words=Sticker.STOP_WORDS, clear_cep=True) for l in self.__text.splitlines()]
         useful_lines = [l for l in lines if l]
 
         # Combinar linhas curtas (pode formar fragmentos de nomes)
@@ -216,5 +273,22 @@ class Sticker:
             self.__recipient_name = best_candidate if best_candidate else ""
             print(f"[INFO] Fallback nome detectado: {self.__recipient_name}")
 
+    def extract_cep(self, text: str):
+        """
+        Extrai todos os CEPs do texto OCR já sanitizado.
+        Armazena os valores em self.__cep como um set().
+        """
+        if not hasattr(self, "__cep"):
+            self.__cep = set()
+
+        # Limpar texto para facilitar regex
+        text_clean = Sticker.sanitize(text, stop_words=self.STOP_WORDS, min_words=1, for_ner=False)
+        
+        # Regex para CEPs
+        cep_matches = re.findall(r'\b\d{5}-?\d{3}\b', text_clean)
+        for cep in cep_matches:
+            # Normalizar: remover hífen
+            self.__cep.add(cep.replace("-", ""))
+    
     def __str__(self):
         return self.text
