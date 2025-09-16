@@ -1,97 +1,76 @@
 import spacy
 from spacy.training import Example
-from itertools import islice
-from spacy.util import minibatch, compounding
+from spacy.scorer import Scorer
+from spacy.tokens import DocBin
+from spacy.util import minibatch
 from pathlib import Path
-import json
 import random
 
-spacy.require_gpu()
+# --- Caminhos ---
+DATA_DIR = Path(__file__).parent.parent / "data"
+TRAIN_EX = DATA_DIR / "names_training.spacy"   # converti para .spacy
+DEV_EX = DATA_DIR / "names_dev.spacy"
+MODEL_DIR = Path(__file__).parent.parent / "models" / "name_ner_old" / "model-last"
+OUTPUT_DIR = Path(__file__).parent.parent / "models" / "name_ner"
 
-# --- Caminho do dataset ---
-DATA_PATH = Path(__file__).parent.parent / "data" / "names_training.json"
+# --- Config ---
+MAX_EPOCHS = 5
+DROP_OUT = 0.2
+BATCH_SIZE = 16
+USE_GPU = True
 
-# --- Caminho do modelo existente ---
-MODEL_PATH = Path(__file__).parent.parent / "models" / "name_ner"
-
-# --- Criar pasta para checkpoints ---
-CHECKPOINT_DIR = MODEL_PATH / "checkpoints"
-CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
-
-# --- Função para carregar dados em batches ---
-def load_data_in_batches(path, batch_size=5000):
-    with open(path, "r", encoding="utf-8") as f:
-        all_data = json.load(f)
-    for i in range(0, len(all_data), batch_size):
-        yield all_data[i:i + batch_size]
-
-# --- Carregar modelo existente em vez de criar novo ---
-print(f"Carregando modelo existente de: {MODEL_PATH}")
-nlp = spacy.load(MODEL_PATH)
-
-# --- Garantir que o NER esteja presente ---
-if "ner" not in nlp.pipe_names:
-    ner = nlp.add_pipe("ner")
+# --- Configurar GPU antes de carregar modelo ---
+if USE_GPU and spacy.prefer_gpu():
+    spacy.require_gpu()
+    print("GPU ativada")
 else:
-    ner = nlp.get_pipe("ner")
+    print("Usando CPU")
 
-# --- Adicionar label (não dá erro se já existir) ---
-ner.add_label("PERSON")
-
-# --- Inicializar otimizador no modo de continuação ---
+nlp = spacy.load(MODEL_DIR)
 optimizer = nlp.resume_training()
 
-# --- Parâmetros de treino ---
-EPOCHS = 5   # pode usar menos, já que é "refino"
-INITIAL_BATCH = 256
-MAX_BATCH = 512
-iteration = 0
+# --- Função para carregar exemplos de treino ---
+def load_train_examples(spacy_file, nlp_model):
+    doc_bin = DocBin().from_disk(spacy_file)
+    examples = [Example(doc, doc) for doc in doc_bin.get_docs(nlp_model.vocab)]
+    return examples
 
-# --- Treinamento incremental ---
-for epoch in range(EPOCHS):
+# --- Função para criar exemplos do dev set corretamente ---
+def load_dev_examples(spacy_file, nlp_model):
+    doc_bin = DocBin().from_disk(spacy_file)
+    examples = []
+    for ref_doc in doc_bin.get_docs(nlp_model.vocab):
+        pred_doc = nlp_model(ref_doc.text)  # gerar predição
+        example = Example(pred_doc, ref_doc)
+        examples.append(example)
+    return examples
+
+train_examples = load_train_examples(TRAIN_EX, nlp)
+dev_examples = load_dev_examples(DEV_EX, nlp)
+
+# --- Treino incremental ---
+for epoch in range(1, MAX_EPOCHS + 1):
+    random.shuffle(train_examples)
     losses = {}
-    print(f"\n=== Epoch {epoch + 1}/{EPOCHS} ===")
-    
-    for batch_data in load_data_in_batches(DATA_PATH, batch_size=1000):
-        random.shuffle(batch_data)
-        batch_sizes = list(islice(compounding(INITIAL_BATCH, MAX_BATCH, 1.3), 20))
-        batch_sizes = [min(int(b), len(batch_data)) for b in batch_sizes if b <= len(batch_data)]
-        
-        for batch_size in batch_sizes:
-            minibatches = minibatch(batch_data, size=batch_size)
-            print(f"Gerando minibatches para batch_size={batch_size} com {len(batch_data)} exemplos")
-            for mb in minibatches:
-                iteration += 1
-                examples = [Example.from_dict(nlp.make_doc(text), annots) for text, annots in mb]
-                nlp.update(examples, sgd=optimizer, losses=losses)
-                print(f"Epoch {epoch + 1}, Iteração {iteration}, Tamanho do batch: {len(mb)}, Losses: {losses}")
+    example_count = 0
 
-    print(f"Epoch {epoch + 1} - Losses: {losses}")
-    
-    # --- Salvar checkpoint a cada epoch ---
-    checkpoint_path = CHECKPOINT_DIR / f"epoch_{epoch + 1}"
-    nlp.to_disk(checkpoint_path)
-    print(f"Checkpoint salvo em: {checkpoint_path}")
+    print(f"\nEpoch {epoch}/{MAX_EPOCHS}")
+    print(f"{'E #':<5} {'LOSS':<10} {'N':<6} {'ENTS_F':<7} {'ENTS_P':<7} {'ENTS_R':<7} {'F1_SCORE':<7}")
+
+    for batch in minibatch(train_examples, size=BATCH_SIZE):
+        nlp.update(batch, drop=DROP_OUT, losses=losses)
+        example_count += len(batch)
+
+    # Avaliação completa no dev set
+    scorer = Scorer()
+    scores = scorer.score(dev_examples)
+    f1_score = scores["ents_f"]
+
+    print(f"{example_count:<5} {losses.get('ner',0):<10.2f} {len(train_examples):<6} "
+          f"{scores['ents_f']*100:<7.2f} {scores['ents_p']*100:<7.2f} "
+          f"{scores['ents_r']*100:<7.2f} {f1_score*100:<7.2f}")
 
 # --- Salvar modelo atualizado ---
-nlp.to_disk(MODEL_PATH)
-print(f"\nModelo atualizado salvo em: {MODEL_PATH}")
-
-# --- Teste rápido ---
-test_texts = [
-    "Cliente João Pedro Pereira Silva comprou um item",
-    "Entregar pacote para Ruan Silva Ribeiro",
-    "Maria Costa Dias recebeu o pedido",
-    "rua Rosa Vermelha, 315, Osasco, São Paulo João Dias Araújo Filho Remessa 12345",
-    "Fagner Ruiz",
-    "1035 Séne Emissão 2023 Rua Jonas Fonseca, 250, Condominio marrom apt 404, São Gonçalo, Rio Janeiro Ruan Rodrigues Silva Bairro Colubande CEP 24451 260 ESSE UMA Encontre mais próxima Hub ENETENTE Rua Ébano, 111, Térreo, Rio Janeiro CEP 20930 060 RIL",
-    "Moldes De Vestido Pet Nessas presa Destinatário Mauro de uz Rua dos Pregos 476 Condomíno Ip Apt 701 13431 112 São Paulo Remetente ueitom vitor lua Tiradentes 86 casa Campos 37160 000 Minas Garais",
-    "..m 1000 INI Destinatário João Dias Rua Jonas Fonseca, 250 Condomínio azul, apartamento 112 24451 260 São Gonçalo Remotento SIGEP WEB Ambiente Homologação"
-]
-
-print("\nTeste rápido de reconhecimento de nomes:")
-for text in test_texts:
-    doc = nlp(text)
-    names = [ent.text for ent in doc.ents if ent.label_ == "PERSON"]
-    print(f"Texto: '{text}' -> Nomes detectados: {names}")
-
+OUTPUT_DIR.mkdir(exist_ok=True)
+nlp.to_disk(OUTPUT_DIR / "model-last")
+print(f"\n✔ Modelo atualizado salvo em {OUTPUT_DIR / 'model-last'}")

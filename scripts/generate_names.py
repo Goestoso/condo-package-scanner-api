@@ -3,10 +3,12 @@ import random
 import unicodedata
 from pathlib import Path
 from faker import Faker
+import spacy
+from spacy.tokens import DocBin
 
 faker = Faker("pt_BR")
 
-# --- Extrair base de nomes e sobrenomes ---
+# --- Base de nomes e sobrenomes ---
 first_names = set()
 last_names = set()
 for _ in range(5000):
@@ -15,31 +17,30 @@ for _ in range(5000):
         first_names.add(name[0])
         last_names.add(name[-1])
 
-first_names = list(first_names)
-last_names = list(last_names)
-print(f"Coletados {len(first_names)} primeiros nomes e {len(last_names)} sobrenomes")
+# Extras específicos
+extra_first_names = ["Mauro","Anderson","Fabiana","Félix","Sérgio","Aline","Cláudio","Cléber",
+                     "Fábio","Verônica","Osvaldo","Meire","Neusa","Fagner","Ruan","Roberto"]
+extra_last_names = ["Góes","Aguiar","Magalhães","Coelho","Ruiz","Diniz","Xavier","Aparecido",
+                    "Guimarães","Maia","Tavares"]
 
-# --- Nomes e sobrenomes adicionais que geralmente escapam ---
-extra_first_names = [
-    "Mauro", "Anderson", "Fabiana", "Félix", "Sérgio", 
-    "Aline", "Cláudio", "Cléber", "Fábio", "Verônica", 
-    "Osvaldo", "Meire", "Neusa", "Fagner", "Ruan", "Roberto"
+# Lista de estados e siglas do Brasil
+states = [
+    ("Acre", "AC"), ("Alagoas", "AL"), ("Amapá", "AP"), ("Amazonas", "AM"),
+    ("Bahia", "BA"), ("Ceará", "CE"), ("Distrito Federal", "DF"), ("Espírito Santo", "ES"),
+    ("Goiás", "GO"), ("Maranhão", "MA"), ("Mato Grosso", "MT"), ("Mato Grosso do Sul", "MS"),
+    ("Minas Gerais", "MG"), ("Pará", "PA"), ("Paraíba", "PB"), ("Paraná", "PR"),
+    ("Pernambuco", "PE"), ("Piauí", "PI"), ("Rio de Janeiro", "RJ"), ("Rio Grande do Norte", "RN"),
+    ("Rio Grande do Sul", "RS"), ("Rondônia", "RO"), ("Roraima", "RR"), ("Santa Catarina", "SC"),
+    ("São Paulo", "SP"), ("Sergipe", "SE"), ("Tocantins", "TO")
 ]
 
-extra_last_names = [
-    "Góes", "Aguiar", "Magalhães", "Coelho", "Ruiz", "Diniz",
-    "Xavier", "Aparecido", "Guimarães", "Maia", "Tavares"
-]
+# Escolher aleatoriamente um estado
+state_full, state_abbr = random.choice(states)
 
-# --- Atualizar listas ---
-first_names.extend(extra_first_names)
-last_names.extend(extra_last_names)
-
-# Remover duplicados e ordenar para manter limpo
-first_names = sorted(set(first_names))
-last_names = sorted(set(last_names))
-
-print(f"Agora temos {len(first_names)} primeiros nomes e {len(last_names)} sobrenomes")
+first_names.update(extra_first_names)
+last_names.update(extra_last_names)
+first_names = sorted(first_names)
+last_names = sorted(last_names)
 
 # --- Funções auxiliares ---
 def remove_accents(text):
@@ -48,17 +49,16 @@ def remove_accents(text):
 
 def random_case(text):
     r = random.random()
-    if r < 0.33:
-        return text.lower()
-    elif r < 0.66:
-        return text.upper()
-    else:
-        return text.title()
+    if r < 0.33: return text.lower()
+    elif r < 0.66: return text.upper()
+    else: return text.title()
 
-def generate_long_name(first_names, last_names):
-    first_part = " ".join(random.choice(first_names) for _ in range(random.randint(2, 3)))
-    last_part = " ".join(random.choice(last_names) for _ in range(random.randint(2, 3)))
-    return f"{first_part} {last_part}"
+def generate_long_name():
+    first_part = " ".join(random.choice(first_names) for _ in range(random.randint(2,3)))
+    last_part = " ".join(random.choice(last_names) for _ in range(random.randint(2,3)))
+    # Adiciona opcionalmente sufixo
+    suffix = random.choice(["", " Filho", " Neto", " Junior"])
+    return f"{first_part} {last_part}{suffix}"
 
 def generate_name():
     r = random.random()
@@ -69,7 +69,7 @@ def generate_name():
     elif r < 0.9:
         return f"{random.choice(first_names)} {random.choice(first_names)} {random.choice(last_names)}"
     else:
-        return generate_long_name(first_names, last_names)
+        return generate_long_name()
 
 # --- Carregar contextos ---
 DATA_PATH = Path(__file__).parent.parent / "data" / "names_contexts.json"
@@ -79,48 +79,75 @@ with open(DATA_PATH, "r", encoding="utf-8") as f:
 # --- Gerar exemplos ---
 examples = []
 NUM_EXAMPLES = 10000
+NEGATIVE_RATIO = 0.15  # 15% sem nomes
 
 while len(examples) < NUM_EXAMPLES:
+    if random.random() < NEGATIVE_RATIO:
+        # Exemplo negativo: apenas endereço/CEP, sem nome
+        text = f"{faker.street_name()}, {random.randint(1,999)} - {faker.city()} - {faker.postcode()}"
+        examples.append((text, {"entities": []}))
+        continue
+
     name = generate_name()
     address = faker.street_name()
-    number = str(random.randint(1, 9999))  # <--- número da rua
+    number = str(random.randint(1, 9999))
     city = faker.city()
+    state = random.choice([state_full, state_abbr])
     cep = faker.postcode()
-    
     context = random.choice(contexts)
-    text = context.format(
-        name=name,
-        address=address,
-        number=number,
-        city=city,
-        cep=cep
-    )
 
-    # Inserir ruído aleatório
-    if random.random() < 0.1:
-        text += f" {random.randint(1000, 9999)}"
+    # Usar marcador para offsets seguros
+    marker = "<<NAME>>"
+    text = context.format(name=marker, address=address, number=number, city=city, state=state, cep=cep)
+
+    # Substituir marcador pelo nome final
+    start = text.find(marker)
+    final_text = text.replace(marker, name, 1)
+    end = start + len(name)
 
     # Aleatorizar maiúsculas/minúsculas ou remover acentos
-    final_text = text
     if random.random() < 0.2:
         final_text = remove_accents(final_text)
-        # ou usar random_case(final_text)
+    elif random.random() < 0.2:
+        final_text = random_case(final_text)
 
-    # Calcular offset
-    start_name = final_text.find(name)
-    if start_name != -1:
-        end_name = start_name + len(name)
-        entities = [(start_name, end_name, "PERSON")]
-    else:
-        entities = []
-
+    entities = [(start, end, "PERSON")]
     examples.append((final_text, {"entities": entities}))
 
+print(f"{len(examples)} exemplos gerados")
 
-# --- Salvar dataset ---
-OUTPUT_PATH = Path(__file__).parent.parent / "data" / "names_training.json"
-OUTPUT_PATH.parent.mkdir(exist_ok=True)
-with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
-    json.dump(examples, f, ensure_ascii=False, indent=2)
+# --- Split treino/dev (80/20) ---
+random.shuffle(examples)
+split = int(len(examples) * 0.8)
+train_examples = examples[:split]
+dev_examples = examples[split:]
 
-print(f"{len(examples)} exemplos anotados gerados e salvos em {OUTPUT_PATH}")
+DATA_DIR = Path(__file__).parent.parent / "data"
+DATA_DIR.mkdir(exist_ok=True)
+
+# --- Salvar JSON ---
+with open(DATA_DIR / "names_training.json", "w", encoding="utf-8") as f:
+    json.dump(train_examples, f, ensure_ascii=False, indent=2)
+with open(DATA_DIR / "names_dev.json", "w", encoding="utf-8") as f:
+    json.dump(dev_examples, f, ensure_ascii=False, indent=2)
+
+# --- Salvar em spaCy ---
+def to_spacy(examples, output_path):
+    nlp = spacy.blank("pt")
+    doc_bin = DocBin()
+    for text, annot in examples:
+        doc = nlp.make_doc(text)
+        ents = []
+        for start, end, label in annot.get("entities", []):
+            span = doc.char_span(start, end, label=label)
+            if span:
+                ents.append(span)
+        doc.ents = ents
+        doc_bin.add(doc)
+    doc_bin.to_disk(output_path)
+
+to_spacy(train_examples, DATA_DIR / "names_training.spacy")
+to_spacy(dev_examples, DATA_DIR / "names_dev.spacy")
+
+print(f"Treino salvo em {DATA_DIR/'names_training.spacy'}")
+print(f"Dev salvo em {DATA_DIR/'names_dev.spacy'}")
