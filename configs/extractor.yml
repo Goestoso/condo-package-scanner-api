@@ -1,0 +1,9 @@
+stop_name_tokens:
+  - casa
+  - cep
+  - endereco
+  - entrega
+  - pedido
+  - ltda
+  - apartamento
+  - bloco

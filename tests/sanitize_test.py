@@ -5,10 +5,8 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent / "src"))
 
 # Agora dá para importar o módulo
-from sticker import Sticker
+import utils
 
 text = "1035 Séne Emissão 2023 Rua Jonas Fonseca 250 Condominio marrom apt 404 São Gonçalo Rio Janeiro Ruan Rodrigues Silva Bairro Colubande  ESSE UMA Encontre mais próxima Hub ENETENTE Rua Ébano 111 Térreo Rio Janeiro  RIL"
 
-x = Sticker("Ana.jpg")
-print(f"OCR: {text}")
-print(Sticker.sanitize(text=text,clear_cep=True))
+print()
