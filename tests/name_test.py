@@ -11,7 +11,7 @@ test_texts = [
     "Cliente João Pedro Pereira Silva comprou um item",
     "Entregar pacote para Ruan Silva Ribeiro",
     "Maria Costa Dias recebeu o pedido",
-    "rua Rosa Vermelha, 315, Osasco, São Paulo João Dias Araújo Filho Remessa 12345",
+    "rua Rosa Vermelha 315 Osasco São Paulo João Dias Araújo Filho Remessa 12345",
     "Fagner Ruiz",
     "1035 Séne Emissão 2023 Rua Jonas Fonseca 250 Condominio marrom apt 404 São Gonçalo RJ Ruan Rodrigues Silva Bairro Colubande ESSE UMA Encontre mais próxima Hub ENETENTE Rua Ébano 111 Térreo RJ",
     "Moldes Vestido Pet Nessas presa Destinatário Mauro Rua dos Pregos 476 Condomíno Black Apt 12 SP Remetente ueitom vitor lua Tiradentes casa Campos MG",

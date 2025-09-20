@@ -1,0 +1,482 @@
+[
+  [
+    "DIADII TER 2793 2793 João Lucas Paula Oliveira Filho Rua das Flores have accos partamento Referencia frente Pepe proximo Igreja Universal",
+    {
+      "entities": [
+        [
+          21,
+          52,
+          "PERSON"
+        ]
+      ]
+    }
+  ],
+  [
+    "DIADII TER 6303 6303 Paula Costa Rua das Flores have accos partamento Referencia frente Pepe proximo Igreja Universal",
+    {
+      "entities": [
+        [
+          21,
+          32,
+          "PERSON"
+        ]
+      ]
+    }
+  ],
+  [
+    "6333 INI Destinatário João Meira Travessa do Sol 6333 Condomínio 6333 Rio de Janeiro Remotento SIGEP WEB Ambiente Homologação",
+    {
+      "entities": [
+        [
+          22,
+          32,
+          "PERSON"
+        ]
+      ]
+    }
+  ],
+  [
+    "DIADII TER 9508 9508 João Sávio Torres Travessa do Sol have accos partamento Referencia frente Pepe proximo Igreja Universal",
+    {
+      "entities": [
+        [
+          21,
+          38,
+          "PERSON"
+        ]
+      ]
+    }
+  ],
+  [
+    "3723 INI Destinatário Maria Carneiro Rua das Flores 3723 Condomínio 3723 Curitiba Remotento SIGEP WEB Ambiente Homologação",
+    {
+      "entities": [
+        [
+          22,
+          36,
+          "PERSON"
+        ]
+      ]
+    }
+  ],
+  [
+    "1540 INI Destinatário Eliana Avenida Brasil 1540 Condomínio 1540 São Paulo Remotento SIGEP WEB Ambiente Homologação",
+    {
+      "entities": [
+        [
+          22,
+          28,
+          "PERSON"
+        ]
+      ]
+    }
+  ],
+  [
+    "DIADII TER 4757 4757 Agnes Rua das Flores have accos partamento Referencia frente Pepe proximo Igreja Universal",
+    {
+      "entities": [
+        [
+          21,
+          26,
+          "PERSON"
+        ]
+      ]
+    }
+  ],
+  [
+    "3744 INI Destinatário Carlos Afonso Oliveira Avenida Brasil 3744 Condomínio 3744 Belo Horizonte Remotento SIGEP WEB Ambiente Homologação",
+    {
+      "entities": [
+        [
+          22,
+          44,
+          "PERSON"
+        ]
+      ]
+    }
+  ],
+  [
+    "DIADII TER 3733 3733 Carneiro Travessa do Sol have accos partamento Referencia frente Pepe proximo Igreja Universal",
+    {
+      "entities": [
+        [
+          21,
+          29,
+          "PERSON"
+        ]
+      ]
+    }
+  ],
+  [
+    "9264 INI Destinatário Fernanda Souza Rua das Flores 9264 Condomínio 9264 Rio de Janeiro Remotento SIGEP WEB Ambiente Homologação",
+    {
+      "entities": [
+        [
+          22,
+          36,
+          "PERSON"
+        ]
+      ]
+    }
+  ],
+  [
+    "8733 INI Destinatário Viviane Souza Rua 7 de Setembro 8733 Condomínio 8733 São Paulo Remotento SIGEP WEB Ambiente Homologação",
+    {
+      "entities": [
+        [
+          22,
+          35,
+          "PERSON"
+        ]
+      ]
+    }
+  ],
+  [
+    "7306 INI Destinatário Marta Rua das Flores 7306 Condomínio 7306 Rio de Janeiro Remotento SIGEP WEB Ambiente Homologação",
+    {
+      "entities": [
+        [
+          22,
+          27,
+          "PERSON"
+        ]
+      ]
+    }
+  ],
+  [
+    "DIADII TER 1799 1799 Costa Rua 7 de Setembro have accos partamento Referencia frente Pepe proximo Igreja Universal",
+    {
+      "entities": [
+        [
+          21,
+          26,
+          "PERSON"
+        ]
+      ]
+    }
+  ],
+  [
+    "DIADII TER 3641 3641 Lucas João Gomes Travessa do Sol have accos partamento Referencia frente Pepe proximo Igreja Universal",
+    {
+      "entities": [
+        [
+          21,
+          37,
+          "PERSON"
+        ]
+      ]
+    }
+  ],
+  [
+    "4675 INI Destinatário Fernanda Ronaldo Meira Rua 7 de Setembro 4675 Condomínio 4675 Curitiba Remotento SIGEP WEB Ambiente Homologação",
+    {
+      "entities": [
+        [
+          22,
+          44,
+          "PERSON"
+        ]
+      ]
+    }
+  ],
+  [
+    "2545 INI Destinatário Afonso Tavares Rua das Flores 2545 Condomínio 2545 Rio de Janeiro Remotento SIGEP WEB Ambiente Homologação",
+    {
+      "entities": [
+        [
+          22,
+          36,
+          "PERSON"
+        ]
+      ]
+    }
+  ],
+  [
+    "DIADII TER 2066 2066 Ana Tavares Avenida Brasil have accos partamento Referencia frente Pepe proximo Igreja Universal",
+    {
+      "entities": [
+        [
+          21,
+          32,
+          "PERSON"
+        ]
+      ]
+    }
+  ],
+  [
+    "DIADII TER 7786 7786 Fernanda Souza Rua das Flores have accos partamento Referencia frente Pepe proximo Igreja Universal",
+    {
+      "entities": [
+        [
+          21,
+          35,
+          "PERSON"
+        ]
+      ]
+    }
+  ],
+  [
+    "7696 INI Destinatário Ana Rua das Flores 7696 Condomínio 7696 Belo Horizonte Remotento SIGEP WEB Ambiente Homologação",
+    {
+      "entities": [
+        [
+          22,
+          25,
+          "PERSON"
+        ]
+      ]
+    }
+  ],
+  [
+    "6829 INI Destinatário João Rua 7 de Setembro 6829 Condomínio 6829 Curitiba Remotento SIGEP WEB Ambiente Homologação",
+    {
+      "entities": [
+        [
+          22,
+          26,
+          "PERSON"
+        ]
+      ]
+    }
+  ],
+  [
+    "DIADII TER 2519 2519 Fernanda Travessa do Sol have accos partamento Referencia frente Pepe proximo Igreja Universal",
+    {
+      "entities": [
+        [
+          21,
+          29,
+          "PERSON"
+        ]
+      ]
+    }
+  ],
+  [
+    "8273 INI Destinatário Eliana Maria Costa Rua das Flores 8273 Condomínio 8273 São Paulo Remotento SIGEP WEB Ambiente Homologação",
+    {
+      "entities": [
+        [
+          22,
+          40,
+          "PERSON"
+        ]
+      ]
+    }
+  ],
+  [
+    "DIADII TER 276 276 Afonso Ronaldo Tavares Travessa do Sol have accos partamento Referencia frente Pepe proximo Igreja Universal",
+    {
+      "entities": [
+        [
+          19,
+          41,
+          "PERSON"
+        ]
+      ]
+    }
+  ],
+  [
+    "DIADII TER 9208 9208 Alex Travessa do Sol have accos partamento Referencia frente Pepe proximo Igreja Universal",
+    {
+      "entities": [
+        [
+          21,
+          25,
+          "PERSON"
+        ]
+      ]
+    }
+  ],
+  [
+    "8067 INI Destinatário Jéssica Avenida Brasil 8067 Condomínio 8067 Rio de Janeiro Remotento SIGEP WEB Ambiente Homologação",
+    {
+      "entities": [
+        [
+          22,
+          29,
+          "PERSON"
+        ]
+      ]
+    }
+  ],
+  [
+    "DIADII TER 2705 2705 Sávio Sávio Maia Travessa do Sol have accos partamento Referencia frente Pepe proximo Igreja Universal",
+    {
+      "entities": [
+        [
+          21,
+          37,
+          "PERSON"
+        ]
+      ]
+    }
+  ],
+  [
+    "8318 INI Destinatário João Rua 7 de Setembro 8318 Condomínio 8318 São Paulo Remotento SIGEP WEB Ambiente Homologação",
+    {
+      "entities": [
+        [
+          22,
+          26,
+          "PERSON"
+        ]
+      ]
+    }
+  ],
+  [
+    "4050 INI Destinatário Pereira Avenida Brasil 4050 Condomínio 4050 Belo Horizonte Remotento SIGEP WEB Ambiente Homologação",
+    {
+      "entities": [
+        [
+          22,
+          29,
+          "PERSON"
+        ]
+      ]
+    }
+  ],
+  [
+    "4637 INI Destinatário Marta Ludmila Ludmila Torres Junior Travessa do Sol 4637 Condomínio 4637 Rio de Janeiro Remotento SIGEP WEB Ambiente Homologação",
+    {
+      "entities": [
+        [
+          22,
+          57,
+          "PERSON"
+        ]
+      ]
+    }
+  ],
+  [
+    "4071 INI Destinatário Alex Elaine Costa Rua 7 de Setembro 4071 Condomínio 4071 Rio de Janeiro Remotento SIGEP WEB Ambiente Homologação",
+    {
+      "entities": [
+        [
+          22,
+          39,
+          "PERSON"
+        ]
+      ]
+    }
+  ],
+  [
+    "DIADII TER 9837 9837 Oliveira Rua das Flores have accos partamento Referencia frente Pepe proximo Igreja Universal",
+    {
+      "entities": [
+        [
+          21,
+          29,
+          "PERSON"
+        ]
+      ]
+    }
+  ],
+  [
+    "7959 INI Destinatário Ludmila Fernanda Pereira Avenida Brasil 7959 Condomínio 7959 Belo Horizonte Remotento SIGEP WEB Ambiente Homologação",
+    {
+      "entities": [
+        [
+          22,
+          46,
+          "PERSON"
+        ]
+      ]
+    }
+  ],
+  [
+    "9065 INI Destinatário Elaine Eliana Guimarães Rua 7 de Setembro 9065 Condomínio 9065 São Paulo Remotento SIGEP WEB Ambiente Homologação",
+    {
+      "entities": [
+        [
+          22,
+          45,
+          "PERSON"
+        ]
+      ]
+    }
+  ],
+  [
+    "61 INI Destinatário Alex Maia Rua das Flores 61 Condomínio 61 Rio de Janeiro Remotento SIGEP WEB Ambiente Homologação",
+    {
+      "entities": [
+        [
+          20,
+          29,
+          "PERSON"
+        ]
+      ]
+    }
+  ],
+  [
+    "DIADII TER 8759 8759 Alex Paula Carlos Oliveira Neto Rua das Flores have accos partamento Referencia frente Pepe proximo Igreja Universal",
+    {
+      "entities": [
+        [
+          21,
+          52,
+          "PERSON"
+        ]
+      ]
+    }
+  ],
+  [
+    "2283 INI Destinatário Viviane Alex Gomes Travessa do Sol 2283 Condomínio 2283 Rio de Janeiro Remotento SIGEP WEB Ambiente Homologação",
+    {
+      "entities": [
+        [
+          22,
+          40,
+          "PERSON"
+        ]
+      ]
+    }
+  ],
+  [
+    "1647 INI Destinatário Meira Avenida Brasil 1647 Condomínio 1647 Rio de Janeiro Remotento SIGEP WEB Ambiente Homologação",
+    {
+      "entities": [
+        [
+          22,
+          27,
+          "PERSON"
+        ]
+      ]
+    }
+  ],
+  [
+    "DIADII TER 3621 3621 Costa Avenida Brasil have accos partamento Referencia frente Pepe proximo Igreja Universal",
+    {
+      "entities": [
+        [
+          21,
+          26,
+          "PERSON"
+        ]
+      ]
+    }
+  ],
+  [
+    "DIADII TER 7601 7601 Silva Rua das Flores have accos partamento Referencia frente Pepe proximo Igreja Universal",
+    {
+      "entities": [
+        [
+          21,
+          26,
+          "PERSON"
+        ]
+      ]
+    }
+  ],
+  [
+    "3421 INI Destinatário Eliana Torres Rua das Flores 3421 Condomínio 3421 Curitiba Remotento SIGEP WEB Ambiente Homologação",
+    {
+      "entities": [
+        [
+          22,
+          35,
+          "PERSON"
+        ]
+      ]
+    }
+  ]
+]

@@ -19,9 +19,11 @@ for _ in range(5000):
 
 # Extras específicos
 extra_first_names = ["Mauro","Anderson","Fabiana","Félix","Sérgio","Aline","Cláudio","Cléber",
-                     "Fábio","Verônica","Osvaldo","Meire","Neusa","Fagner","Ruan","Roberto"]
-extra_last_names = ["Góes","Aguiar","Magalhães","Coelho","Ruiz","Diniz","Xavier","Aparecido",
-                    "Guimarães","Maia","Tavares"]
+                     "Fábio","Verônica","Osvaldo","Meire","Neusa","Fagner","Ruan","Roberto",
+                     "Sávio", "Afonso", "Charles", "Douglas", "Ludmila", "Marta", "Agnes",
+                     "Ronaldo", "Alex", "Paula", "Eliana", "Elaine", "Viviane", "Carmen"]
+extra_last_names = ["Góes","Aguiar","Magalhães","Coelho","Ruiz","Diniz","Xavier","Castilho",
+                    "Guimarães","Maia","Tavares", "Carneiro", "Meira", "Maciel", "Torres"]
 
 # Lista de estados e siglas do Brasil
 states = [
@@ -62,11 +64,15 @@ def generate_long_name():
 
 def generate_name():
     r = random.random()
-    if r < 0.2:
+    if r < 0.15:
+        # Apenas primeiro nome
         return random.choice(first_names)
-    elif r < 0.6:
+    elif r < 0.25:
+        # Apenas sobrenome
+        return random.choice(last_names)
+    elif r < 0.55:
         return f"{random.choice(first_names)} {random.choice(last_names)}"
-    elif r < 0.9:
+    elif r < 0.85:
         return f"{random.choice(first_names)} {random.choice(first_names)} {random.choice(last_names)}"
     else:
         return generate_long_name()
