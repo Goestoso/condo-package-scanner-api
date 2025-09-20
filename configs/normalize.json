@@ -1,0 +1,18 @@
+{
+    "complements": {
+        "ap": "apartamento",
+        "apt": "apartamento",
+        "bl": "bloco",
+        "cj": "conjunto",
+        "cond": "condominio"
+    },
+
+    "prefixes": {
+        "rua": ["rua", "r", "ri", "ru", "rn", "ra"],
+        "avenida": ["av", "ave", "nida", "avn", "avnida"],
+        "rodovia": ["rod", "dovia", "rodv", "rodovia"],
+        "estrada": ["est", "estr", "estrada", "trada"],
+        "travessa": ["tv", "trv", "trav", "travessa"]
+    }
+
+}

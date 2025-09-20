@@ -6,26 +6,18 @@ stop_words:
   - Soc
   - Separação
   - Correios
-  - Pedido
   - NF
   - Nome Legivel
   - Documento
   - DANFE
-  - Volume
   - Envio
-  - Recebimento
-  - Confirmação
   - Expressa
-  - Finalizado
   - Rastreio
-  - Entrega
+  - Nota
   - Etiqueta
-  - Pacote
   - Simplificado
   - Saída
   - Peso
-  - Pedido
-  - Volume
   - AMAZON
   - Loggi
   - SEDEX
@@ -35,11 +27,12 @@ stop_words:
   - loja
   - Igreja
   - Assinatura
-  - Recebedor
   - Contrato
-  - Produtos
   - supplements
   - growth
   - flex
   - Mercado
   - pet
+  - cpf
+  - cnpj
+  - Data

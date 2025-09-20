@@ -1,8 +1,7 @@
 import re
 from rapidfuzz import process, fuzz
-import unicodedata
-import yaml
-from pathlib import Path
+from src.utils.config_loader import COMPLEMENTS, PREFIXES
+
 
 # Siglas e nomes oficiais
 STATES = {
@@ -15,13 +14,30 @@ STATES = {
     "SP": "SÃO PAULO", "SE": "SERGIPE", "TO": "TOCANTINS"
 }
 
-# Stop words irrelevantes
-CONFIG_PATH = Path(__file__).parent.parent / "configs" / "sanitize.yml"
-with open(CONFIG_PATH, "r", encoding="utf-8") as f:
-    config = yaml.safe_load(f)
+def normalize_address_complement(text: str) -> str:
+    """Substitui abreviações de complementos por palavras completas."""
+    words = text.split()
+    for i, w in enumerate(words):
+        key = w.lower().rstrip(".")
+        if key in COMPLEMENTS:
+            words[i] = COMPLEMENTS[key]
+    return " ".join(words)
 
-STOP_WORDS = config.get("stop_words", [])
-
+def normalize_address_prefix(text: str) -> str:
+    """Normaliza prefixos de logradouro usando fuzzy match."""
+    words = text.split()
+    for i, w in enumerate(words):
+        w_lower = w.lower()
+        best_match = None
+        best_score = 0
+        for prefix, variations in PREFIXES.items():
+            match, score, _ = process.extractOne(w_lower, variations, scorer=fuzz.ratio)
+            if score > best_score:
+                best_score = score
+                best_match = prefix
+        if best_score >= 70:  # limiar razoável
+            words[i] = best_match
+    return " ".join(words)
 
 def normalize_ceps(txt: str) -> str:
     def cep_replacer(match):
@@ -88,84 +104,21 @@ def normalize_case(text: str, preserve_upper=None) -> str:
             normalized.append(w.capitalize())
     return " ".join(normalized)
 
-
-def remove_stopwords(text: str, stop_words) -> str:
-    for sw in stop_words:
-        text = re.sub(rf"{re.escape(sw)}\b", "", text, flags=re.IGNORECASE)
-    return text
-
-def keep_relevant_chars(text: str, for_ner: bool) -> str:
-    text = re.sub(r"[^a-zA-Z0-9á-úÁ-ÚçÇ.,\s]", " ", text)
-    if for_ner:
-        text = re.sub(r"[.,]", " ", text)
-    return re.sub(r"\s+", " ", text).strip()
-
-def remove_alphanum_codes(text: str) -> str:
-    return re.sub(r'\b\w*\d+\w*\b',
-                  lambda m: '' if re.search(r'\D', m.group()) else m.group(),
-                  text)
-
-def remove_long_numbers(text: str, max_len: int = 8) -> str:
-    return re.sub(rf'\b\d{{{max_len+1},}}\b', '', text)
-
-def remove_short_words(words: list[str], min_len: int = 3) -> list[str]:
-    return [w for w in words if len(w) >= min_len]
-
-def remove_links(words: list[str]) -> list[str]:
-    return [w for w in words if not re.match(r'\w+\.\w+(\.\w+)?', w)]
-
-def clear_ceps(text: str) -> str:
-    return re.sub(r'\b\d{8}\b', '', text)
-
-def remove_accents(text: str) -> str:
+def normalize_numbers(text: str) -> str:
     """
-    Remove acentos de um texto, transformando 'á' em 'a', 'ç' em 'c', etc.
+    Junta todos os dígitos que estão separados apenas por espaço.
+    Ex: '1 1' -> '11', '123 456 789' -> '123456789'
     """
-    return ''.join(
-        c for c in unicodedata.normalize('NFD', text)
-        if unicodedata.category(c) != 'Mn'
-    )
+    return re.sub(r'(\d)\s+(?=\d)', r'\1', text)
 
-
-def sanitize_full(text: str, stop_words=STOP_WORDS, min_words=2, for_ner=True, clear_cep=False) -> str:
-    if not text:
-        return ""
-
-    if stop_words is None:
-        stop_words = []
-
-    text = remove_stopwords(text, stop_words)
-    text = keep_relevant_chars(text, for_ner)
-    text = remove_alphanum_codes(text)
-    text = remove_long_numbers(text)
-    text = remove_accents(text)
-
-    words = text.split()
-    words = remove_short_words(words, min_len=3)
-    words = remove_links(words)
-
-    text = " ".join(words)
-
-    if clear_cep:
-        text = clear_ceps(text)
-
-    if len(text.split()) < min_words:
-        return ""
-
-    return text
-
-def find_ceps(text: str):
-    return re.findall(r'\b\d{5}-?\d{3}\b', text)
-
-def find_codes(text: str):
-    return re.findall(r'\b[a-zA-Z0-9]{9,}\b', text)
-
-def full_pipeline(text: str) -> str:
+def normalize_full(text: str, for_address = True) -> str:
     """Executa normalização completa de texto para NER."""
+    if for_address:
+        text = normalize_states(text)
+        text = normalize_sn(text)
+        text = normalize_address_prefix(text)
+        text = normalize_address_complement(text)
     text = normalize_ceps(text)
-    text = normalize_states(text)
-    text = normalize_sn(text)
     text = normalize_case(text)
-    text = sanitize_full(text, clear_cep=True)
-    print(f"Full Pipeline: {text}")
+    print(f"Normalize Pipeline: {text}")
     return text

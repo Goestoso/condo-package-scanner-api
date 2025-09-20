@@ -15,11 +15,12 @@ test_texts = [
     "Fagner Ruiz",
     "1035 Séne Emissão 2023 Rua Jonas Fonseca 250 Condominio marrom apt 404 São Gonçalo RJ Ruan Rodrigues Silva Bairro Colubande ESSE UMA Encontre mais próxima Hub ENETENTE Rua Ébano 111 Térreo RJ",
     "Moldes Vestido Pet Nessas presa Destinatário Mauro Rua dos Pregos 476 Condomíno Black Apt 12 SP Remetente ueitom vitor lua Tiradentes casa Campos MG",
-    "1000 INI Destinatário João Dias Rua Jonas Fonseca 250 Condomínio azul apartamento 112  São Gonçalo Remotento SIGEP WEB Ambiente Homologação",
+    "Destinatario João Dias Rua Jonas Fonseca 250 Condominio Azul Apartamento Sao Goncalo Remotento Sigep",
     "DIADII TER 2025 8398 datguei Savio Pereira Castro Entergo Avenida Brigadeiro Luis Antonio 1272 Bela  Cidade destin Complemento Auto pecas Reino have accos partamento Referencia frente Pepe proximo Igreja Universal",
     "Spe Destinatario Pedro Henrique Parizoti Meyer Rua Iara 476 Parque Dos Camargos  Barueri Remetente Alimenticios Ltda Avenida Wilson Lemos 2850 Santa Luzia  Tijucas",
     "Destinario Ana Moraes Endereco ANA Casa VILA MARIA HELENA CARAPICUIBA  Caixa 001 001 DELIVERY TRANSPORTES LTDA 999226 CAR Norma",
-    "Flex Set 2322000 CARAPICUIBA CARAPICUÍBA Endereço Rua Ana Complemento Bairro Vila Maria Heler Destinatario Jonas Moraes PRINTER"
+    "Flex Set 2322000 CARAPICUIBA CARAPICUÍBA Endereço Rua Ana Complemento Bairro Vila Maria Heler Destinatario Jonas Moraes PRINTER",
+    "autorizacao Uso protocolo Simplific Rodovia PR Animais MG Ado PI 395 SE 9 Emissao Destinatario SP Cliente Sarah Olive Rua Xv Novembro 500 Bloco 2 Apartamento 12 Jardim Gabr Jandira SP Condominio Tel Mega Rota PB Mm Nto Sar SP Not"
 ]
 
 print("\nTeste rápido de reconhecimento de nomes:")
