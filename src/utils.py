@@ -1,6 +1,8 @@
 import re
 from rapidfuzz import process, fuzz
 import unicodedata
+import yaml
+from pathlib import Path
 
 # Siglas e nomes oficiais
 STATES = {
@@ -14,16 +16,12 @@ STATES = {
 }
 
 # Stop words irrelevantes
-STOP_WORDS = [
-        "Shopee", "XPRESS", "LEVAR", "Agência", "Soc", "Separação",
-        "Correios", "Pedido", "NF", "Nome Legível",
-        "Documento", "DANFE", "Volume", "Envio",
-        "Recebimento", "Confirmação", "Expressa", "Finalizado",
-        "Rastreio", "Entrega", "Etiqueta", "Pacote",
-        "Simplificado", "Saída", "Peso", "Pedido", "Volume",
-        "AMAZON", "Loggi", "SEDEX", "Shein", "Objeto", "CEP",
-        "loja"
-    ]
+CONFIG_PATH = Path(__file__).parent.parent / "configs" / "sanitize.yml"
+with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+    config = yaml.safe_load(f)
+
+STOP_WORDS = config.get("stop_words", [])
+
 
 def normalize_ceps(txt: str) -> str:
     def cep_replacer(match):
@@ -73,6 +71,23 @@ def normalize_states(text: str) -> str:  # --- Normaliza estados em siglas (ex: 
 
     text = " ".join(words)
     return text
+
+def normalize_case(text: str, preserve_upper=None) -> str:
+    """
+    Capitaliza cada palavra do texto.
+    preserve_upper: lista de palavras/siglas que devem permanecer em maiúsculas
+    """
+    if preserve_upper is None:
+        preserve_upper = []
+    words = text.split()
+    normalized = []
+    for w in words:
+        if w.upper() in preserve_upper:
+            normalized.append(w.upper())
+        else:
+            normalized.append(w.capitalize())
+    return " ".join(normalized)
+
 
 def remove_stopwords(text: str, stop_words) -> str:
     for sw in stop_words:
@@ -150,6 +165,7 @@ def full_pipeline(text: str) -> str:
     text = normalize_ceps(text)
     text = normalize_states(text)
     text = normalize_sn(text)
+    text = normalize_case(text)
     text = sanitize_full(text, clear_cep=True)
     print(f"Full Pipeline: {text}")
     return text
