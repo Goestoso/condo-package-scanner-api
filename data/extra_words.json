@@ -1,6 +1,6 @@
 [
   "Destinatário", "Remetente", "Emissão", "Remessa", "Destino", "Endereço",
-  "Cliente", "Fornecedor", "Entrega", "Bairro", "Complemento", "Nota",
+  "Cliente", "Fornecedor", "Entrega", "Nota", "Loja", "Mercado", "Codigo",
   "Fatura", "Pedido", "Casa", "Setor", "Quadra", "Lote", "Produto", "Peso", 
   "Cidade", "Estado", "UF", "Recebimento", "Expedição", "Envio", "Comprimento",
   "Cadastro", "Documento", "Referência", "Identificação", "Empresa", "Contato",

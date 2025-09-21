@@ -95,7 +95,7 @@ with open(DATA_DIR / "fine_tuning_train.json", "w", encoding="utf-8") as f:
 with open(DATA_DIR / "fine_tuning_dev.json", "w", encoding="utf-8") as f:
     json.dump(dev_examples, f, ensure_ascii=False, indent=2)
 
-to_spacy(train_examples, DATA_DIR / "fine_tuning_train.spacy")
-to_spacy(dev_examples, DATA_DIR / "fine_tuning_dev.spacy")
+to_spacy(train_examples, DATA_DIR / "fine_tuning_name_train.spacy")
+to_spacy(dev_examples, DATA_DIR / "fine_tuning_name_dev.spacy")
 
 print("✅ Fine-tuning dataset gerado!")
