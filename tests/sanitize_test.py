@@ -2,11 +2,13 @@ import sys
 from pathlib import Path
 
 # Adiciona a pasta src ao sys.path
-sys.path.append(str(Path(__file__).parent.parent / "src"))
+sys.path.append(str(Path(__file__).parent.parent))
 
 # Agora dá para importar o módulo
-import utils as utils
+from src.utils import sanitize
+from src.utils import normalize
 
-text = "Growth SUPPLEMENTS Contrato SPE Recebedor Assinatura DESTINATÁRIO PEDRO HENRIQUE PARIZOTI MEYER RUA IARA 476 PARQUE DOS CAMARGOS 06436 160 BARUERI Remetente GROWTH SUPPLEMENTS PRODUTOS ALIMENTÍCIOS LTDA AVENIDA WILSON LEMOS 2850 SANTA LUZIA 88200 958 TIJUCAS"
+text = "autorizacao Uso protocolo Simplific Rodovia PR Animais MG Ado PI 395 SE 9 Emissao Destinatario SP Cliente Sarah Olive Rua Xv Novembro 500 Bloco 2 Apartamento 12 Jardim Gabr Jandira SP Condominio Tel Mega Rota PB Mm Nto Sar SP Not"
 
-print(utils.full_pipeline(text))
+text = normalize.normalize_full(text)
+print(sanitize.sanitize_full(text))

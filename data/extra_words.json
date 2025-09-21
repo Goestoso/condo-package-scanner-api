@@ -1,9 +1,16 @@
 [
-  "Destinatário", "Remetente", "Emissão", "Remessa", "Destino", "Endereço",
-  "Cliente", "Fornecedor", "Entrega", "Nota", "Loja", "Mercado", "Codigo",
-  "Fatura", "Pedido", "Casa", "Setor", "Quadra", "Lote", "Produto", "Peso", 
-  "Cidade", "Estado", "UF", "Recebimento", "Expedição", "Envio", "Comprimento",
-  "Cadastro", "Documento", "Referência", "Identificação", "Empresa", "Contato",
-  "Telefone", "Celular", "Email", "Agência", "Conta", "Banco", "Número",
-  "Data", "Hora", "Observação", "Mensagem", "Nota Fiscal", "Registro", "Altura"
+  "CEP", "CNPJ", "CPF", "IE", "RG", "Matricula", "Inscrição", "Registro Geral",
+  "Transportadora", "Carregamento", "Despacho", "Coleta", "Entrega Parcial",
+  "Rastreamento", "Protocolo", "Chave", "Autorização", "Licença", "Procurador",
+  "Representante", "Atendente", "Funcionário", "Motorista", "Placa", "Veículo",
+  "Carga", "Volume", "Volumes", "Palete", "Caixa", "Unidade", "Pacote", "Envelope",
+  "Preço", "Valor", "Total", "Saldo", "Débito", "Crédito", "Boleto", "Pagamento",
+  "Pix", "Dinheiro", "Cartão", "Cheque",
+  "Emitente", "Tomador", "Consignatário", "Expedidor", "Destinataria",
+  "Observações", "Comentários", "Anotação", "Descrição", "Resumo",
+  "Vencimento", "Validade", "Prazo", "Competência", "Período",
+  "Série", "Modelo", "Tipo", "Versão", "Arquivo", "Página",
+  "Origem", "Local", "Saída", "Entrada", "Chegada", "Partida", "Itinerário",
+  "Fiscal", "Contábil", "Comercial", "Administrativo", "Jurídico",
+  "Confidencial", "Privado", "Interno", "Externo"
 ]
