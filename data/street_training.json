@@ -1,0 +1,1022 @@
+[
+  [
+    "Destinatário Nota Fiscal Documento Av. Estação Lucca Costela 7106 Cidade Produto Codigo Remetente",
+    {
+      "entities": [
+        [
+          35,
+          60,
+          "STREET"
+        ],
+        [
+          61,
+          65,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "R. Esplanada de Azevdeo 1783",
+    {
+      "entities": [
+        [
+          0,
+          23,
+          "STREET"
+        ],
+        [
+          24,
+          28,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Telefone Conta Peso Número Banco Viela Priaa Larissa Sampaio 584u9 Número Conta Empresa Emissão Destino",
+    {
+      "entities": [
+        [
+          33,
+          60,
+          "STREET"
+        ],
+        [
+          61,
+          66,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Setor Nota Fiscal Peso Observação Mercado Piráça Avenaidá Maira Luísa Martnís 5448 Banco",
+    {
+      "entities": [
+        [
+          42,
+          75,
+          "STREET"
+        ],
+        [
+          76,
+          82,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Destinatário Fornecedor Estradá Lagoa Maria Aliçe Correia 3i345 Banco UF Conta Destinatário Destino",
+    {
+      "entities": [
+        [
+          24,
+          57,
+          "STREET"
+        ],
+        [
+          58,
+          63,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Fatura Envio Empresa Ruá Féira Coasa Grnade 7424 Empresa Loja Destinatário Documento",
+    {
+      "entities": [
+        [
+          21,
+          42,
+          "STREET"
+        ],
+        [
+          43,
+          48,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "PRÁÇA PASSARELA DE GONÇALVÉS 56u92",
+    {
+      "entities": [
+        [
+          0,
+          28,
+          "STREET"
+        ],
+        [
+          29,
+          34,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Casa Peso Contato Loja Mercado Rodovai Jardim Maria Eduardá da Mata 1210 Remessa Observação Lote Estado Data",
+    {
+      "entities": [
+        [
+          31,
+          67,
+          "STREET"
+        ],
+        [
+          68,
+          72,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Produto Recebimento trav. campo ribeiero 9363 Remetente Cliente Identificação Nota",
+    {
+      "entities": [
+        [
+          20,
+          39,
+          "STREET"
+        ],
+        [
+          40,
+          45,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Comprimento almeda conjunto da rcoha 6517 Lote Remessa Agência",
+    {
+      "entities": [
+        [
+          12,
+          37,
+          "STREET"
+        ],
+        [
+          38,
+          41,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Telefone Codigo Banco Prç. Rodovia Maçhado 6597 Setor",
+    {
+      "entities": [
+        [
+          22,
+          42,
+          "STREET"
+        ],
+        [
+          43,
+          47,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Destinatário Expedição Ruá dos Pregos nº 476 Destinatário",
+    {
+      "entities": [
+        [
+          23,
+          40,
+          "STREET"
+        ],
+        [
+          41,
+          44,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Nota Agência Quadra Ruá dos Prégos 476 Remetente Celular Fatura",
+    {
+      "entities": [
+        [
+          20,
+          34,
+          "STREET"
+        ],
+        [
+          35,
+          38,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Contato Produto Cidade Via Alameda dé Siquera 5574 Hora",
+    {
+      "entities": [
+        [
+          23,
+          46,
+          "STREET"
+        ],
+        [
+          47,
+          50,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "ALaAMEDA VÍA IASBELA DUARTE 1165",
+    {
+      "entities": [
+        [
+          0,
+          26,
+          "STREET"
+        ],
+        [
+          27,
+          32,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Observação ALAMEDÁ AVENIDA JOaÃO GUILHERME LEÃÓ 582o6 Documento Estado Expedição Conta Observação",
+    {
+      "entities": [
+        [
+          11,
+          46,
+          "STREET"
+        ],
+        [
+          47,
+          53,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Expedição Entrega Mensagem Praça Faizenda Siqueira 453 Identificação Documento Estado Remetente",
+    {
+      "entities": [
+        [
+          27,
+          49,
+          "STREET"
+        ],
+        [
+          50,
+          54,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "RUA VALE MENDONaÇA 2225",
+    {
+      "entities": [
+        [
+          0,
+          17,
+          "STREET"
+        ],
+        [
+          18,
+          23,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Viela Jardmi Marai Júia Leuão 985",
+    {
+      "entities": [
+        [
+          0,
+          29,
+          "STREET"
+        ],
+        [
+          30,
+          33,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Identificação Tráv. Rodovai Lima 2469 Referência Produto Hora Remetente",
+    {
+      "entities": [
+        [
+          14,
+          32,
+          "STREET"
+        ],
+        [
+          33,
+          37,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Destino Observação R. dos Pregos 476 Codigo Nota Fiscal Celular Envio Fornecedor",
+    {
+      "entities": [
+        [
+          19,
+          32,
+          "STREET"
+        ],
+        [
+          33,
+          36,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Av. Paque Maorcelo Barbósa 2936",
+    {
+      "entities": [
+        [
+          0,
+          26,
+          "STREET"
+        ],
+        [
+          27,
+          31,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Cidade Codigo Expedição Estado Cliente R. Via Ana Luia Noueira 5335 Mensagem UF",
+    {
+      "entities": [
+        [
+          39,
+          64,
+          "STREET"
+        ],
+        [
+          65,
+          67,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "VÍA CONJUNTÓ NASCIMÉTO 8508",
+    {
+      "entities": [
+        [
+          0,
+          23,
+          "STREET"
+        ],
+        [
+          24,
+          27,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Empresa Mensagem Quadra Data Expedição ROD. SÍTIO CASA GRADNE 1617 Remessa Número Mensagem Banco",
+    {
+      "entities": [
+        [
+          39,
+          61,
+          "STREET"
+        ],
+        [
+          62,
+          66,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Destinatário Rua dos Pregos n°o476 Recebimento Email Setor",
+    {
+      "entities": [
+        [
+          13,
+          27,
+          "STREET"
+        ],
+        [
+          28,
+          34,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Via Trevo Betáriz Raos 769a7",
+    {
+      "entities": [
+        [
+          0,
+          23,
+          "STREET"
+        ],
+        [
+          24,
+          28,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Referência Destino Contato Pedido Expedição Rua Dos Pregos 476 Email",
+    {
+      "entities": [
+        [
+          44,
+          58,
+          "STREET"
+        ],
+        [
+          59,
+          62,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Praça Lagóa Maria Clara Pries 6824",
+    {
+      "entities": [
+        [
+          0,
+          29,
+          "STREET"
+        ],
+        [
+          30,
+          34,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "paça travessa benjamim da costa 5742",
+    {
+      "entities": [
+        [
+          0,
+          32,
+          "STREET"
+        ],
+        [
+          33,
+          36,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Rua Dos Pregos 476",
+    {
+      "entities": [
+        [
+          0,
+          14,
+          "STREET"
+        ],
+        [
+          15,
+          18,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Lote Rod. Ladeira Herny Gabriel Aragão 908e4 Mensagem Peso Emissão Email",
+    {
+      "entities": [
+        [
+          5,
+          38,
+          "STREET"
+        ],
+        [
+          39,
+          44,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Emissão Envio Empresa Rod. Esrtada Leão 1645 Recebimento Loja",
+    {
+      "entities": [
+        [
+          22,
+          39,
+          "STREET"
+        ],
+        [
+          40,
+          44,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Casa Nota Remetente Via Aameda Rhávi Vargsa 6680 Remetente Altura Pedido Fatura",
+    {
+      "entities": [
+        [
+          20,
+          44,
+          "STREET"
+        ],
+        [
+          45,
+          48,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Cadastro Nota Fiscal Data Telefone AV. RECeANTO DA CRUZ 6116 Entrega Casa",
+    {
+      "entities": [
+        [
+          35,
+          54,
+          "STREET"
+        ],
+        [
+          55,
+          60,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Entrega UF Lote Expedição Remetente Prç. Rúa De Mednes 3889 Produto Número Agência",
+    {
+      "entities": [
+        [
+          36,
+          54,
+          "STREET"
+        ],
+        [
+          55,
+          59,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Av. Colônia Sampáio 118u3",
+    {
+      "entities": [
+        [
+          0,
+          19,
+          "STREET"
+        ],
+        [
+          20,
+          25,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "RUA DOS PREGOS N°476",
+    {
+      "entities": [
+        [
+          0,
+          14,
+          "STREET"
+        ],
+        [
+          15,
+          20,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Vl. Avenída Airaújo 7661",
+    {
+      "entities": [
+        [
+          0,
+          18,
+          "STREET"
+        ],
+        [
+          19,
+          24,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Data Nota Fiscal r. lotéamentó beatrzi siluveira 8375 Endereço",
+    {
+      "entities": [
+        [
+          17,
+          47,
+          "STREET"
+        ],
+        [
+          48,
+          53,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Setor Destino Nota RUA DOS PREGOS Nº 476 Endereço Remetente",
+    {
+      "entities": [
+        [
+          19,
+          36,
+          "STREET"
+        ],
+        [
+          37,
+          40,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Nota Fiscal Destino Referência Contato RUA DOS PREGOS 476 Pedido Identificação",
+    {
+      "entities": [
+        [
+          39,
+          53,
+          "STREET"
+        ],
+        [
+          54,
+          57,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Fornecedor Identificação Agência Av. Stio da Cruz 6474 Email Destinatário Expedição Nota Fiscal Quadra",
+    {
+      "entities": [
+        [
+          33,
+          50,
+          "STREET"
+        ],
+        [
+          51,
+          54,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Número Email Mercado Produto Paça Jadim de Crdoso 108 Cadastro Conta Endereço Codigo",
+    {
+      "entities": [
+        [
+          29,
+          52,
+          "STREET"
+        ],
+        [
+          53,
+          53,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Envio Loja Via Vereda de Fairas 5228 Codigo",
+    {
+      "entities": [
+        [
+          11,
+          31,
+          "STREET"
+        ],
+        [
+          32,
+          36,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Trávessa Viadto Bórgés 3159",
+    {
+      "entities": [
+        [
+          0,
+          23,
+          "STREET"
+        ],
+        [
+          24,
+          27,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Emissão Recebimento rúa dos pregs 476 Registro Altura Empresa",
+    {
+      "entities": [
+        [
+          20,
+          33,
+          "STREET"
+        ],
+        [
+          34,
+          37,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Envio Cadastro Referência Comprimento Casa PRÇ. MORRO HÉLLENA NUNES 3129 Recebimento Fornecedor Quadra Data Remetente",
+    {
+      "entities": [
+        [
+          43,
+          67,
+          "STREET"
+        ],
+        [
+          68,
+          72,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Nota Produto Cadastro Agência Prç. Fazenda de da Costea 965e5 Email Comprimento Produto",
+    {
+      "entities": [
+        [
+          30,
+          54,
+          "STREET"
+        ],
+        [
+          55,
+          61,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Destino Estado Produto Banco R. PeRAÇA BENTO DA CNHA 2957 Envio Hora",
+    {
+      "entities": [
+        [
+          29,
+          52,
+          "STREET"
+        ],
+        [
+          53,
+          57,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Codigo Email Banco Remetente Destinatário Rua dos Pregos n°47i6 Altura",
+    {
+      "entities": [
+        [
+          42,
+          56,
+          "STREET"
+        ],
+        [
+          57,
+          63,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "UF Remessa Nota Fiscal Email Destinatário R. DOS PoREGOS 476 Banco Data",
+    {
+      "entities": [
+        [
+          42,
+          56,
+          "STREET"
+        ],
+        [
+          57,
+          60,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Entrega Destinatário Setor Emissão via pátio de pastuor 4845 Setor Hora Referência",
+    {
+      "entities": [
+        [
+          35,
+          54,
+          "STREET"
+        ],
+        [
+          55,
+          60,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Número Hora Nota Conta R. DOS PRÉGOS 476 Comprimento Agência Endereço Mensagem Documento",
+    {
+      "entities": [
+        [
+          23,
+          36,
+          "STREET"
+        ],
+        [
+          37,
+          40,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Agência viela paruqé da mótiá 94o18 Referência Fatura Codigo",
+    {
+      "entities": [
+        [
+          8,
+          28,
+          "STREET"
+        ],
+        [
+          29,
+          35,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Empresa Envio Cadastro Recebimento Agência Trávessa Travessa Mouura 3699 Fatura Destino Casa Cadastro Envio",
+    {
+      "entities": [
+        [
+          43,
+          66,
+          "STREET"
+        ],
+        [
+          67,
+          72,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Lote Vl. Fazenoda De Correai 5376 Telefone Documento Altura",
+    {
+      "entities": [
+        [
+          5,
+          27,
+          "STREET"
+        ],
+        [
+          28,
+          33,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Cliente Fatura trav. lago rafáoel ferreira 7726 Fatura Banco Nota Expedição Mensagem",
+    {
+      "entities": [
+        [
+          15,
+          41,
+          "STREET"
+        ],
+        [
+          42,
+          47,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Cidade Rua Dos Pregos 476 Identificação Banco Lote Loja",
+    {
+      "entities": [
+        [
+          7,
+          21,
+          "STREET"
+        ],
+        [
+          22,
+          25,
+          "NUMBER"
+        ]
+      ]
+    }
+  ],
+  [
+    "Rua dos Prégos nº 476",
+    {
+      "entities": [
+        [
+          0,
+          17,
+          "STREET"
+        ],
+        [
+          18,
+          21,
+          "NUMBER"
+        ]
+      ]
+    }
+  ]
+]
