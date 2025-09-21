@@ -25,11 +25,13 @@ class Extractor(Sticker):
 
     TEST_ADDRESSES = [
         "Rua Ana 35 Vila Maria Helena Carapicuiba SP",
+        "Rua Ana 35 Carapicuiba SP",
         "Avenida Brigadeiro Luis Antonio 1272 Apartamento 16 Sao Paulo SP",
         "Rua Iara 476 Parque dos Camargos Barueri SP",
         "Rua Dos Pregos 476 Condomino Ipe Apartamento 701 Sao Paulo SP",
         "Rua XV de Novembro 500 Bloco 2 Apartamento 12 Jardim Gabriela Jandira SP",
         "Avenida Das Flores 1011 Bloco B Apartamento 715 Centro Varginha MG",
+        "Avenida Das Flores",
         "Rua Jonas Fonseca 2501 Condominio Marrom Apartamento 404 Sao Goncalo RJ"
     ]
 
