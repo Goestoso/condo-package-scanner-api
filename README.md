@@ -256,6 +256,6 @@ O projeto utiliza logging para monitoramento do pipeline, debug e rastreamento d
 
 **Observações**
 
-- Mantenha `DEBUG` durante testes e ajustes de modelos.
+- Mantenha `DEBUG` durante testes e ajustes de modelos."
 - Em produção, utilize `INFO` ou `WARNING` para reduzir mensagens.
 - Logs ajudam a identificar problemas no OCR, NER ou fuzzy match.

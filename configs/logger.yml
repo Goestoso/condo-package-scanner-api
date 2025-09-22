@@ -1,0 +1,8 @@
+version: 1
+log_file: logs/order_scanner.log
+log_level: DEBUG
+console_level: INFO
+max_bytes: 5242880        # 5 MB
+backup_count: 3
+format: "%(asctime)s | %(name)s | %(levelname)s | %(message)s"
+datefmt: "%Y-%m-%d %H:%M:%S"

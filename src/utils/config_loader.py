@@ -1,25 +1,42 @@
-import yaml
+import yaml, json
 from pathlib import Path
-import json
+from src.utils.logger import get_logger
 
-CONFIG_PATH = Path(__file__).parent.parent.parent / "configs" / "extractor.yml"
+logger = get_logger(__name__)  # Cria um logger para este módulo
 
-with open(CONFIG_PATH, "r", encoding="utf-8") as f:
-    config = yaml.safe_load(f)
+CONFIG_DIR = Path(__file__).parent.parent.parent / "configs"
 
-STOP_NAME_TOKENS = set(config.get("stop_name_tokens", []))
+# --- Carregar extractor.yml ---
+EXTRACTOR_CONFIG_FILE = CONFIG_DIR / "extractor.yml"
+try:
+    with open(EXTRACTOR_CONFIG_FILE, encoding="utf-8") as f:
+        EXTRACTOR_CONFIG = yaml.safe_load(f)
+    STOP_NAME_TOKENS = set(EXTRACTOR_CONFIG.get("stop_name_tokens", []))
+    logger.info(f"Config 'extractor.yml' carregada com sucesso. Tokens de parada: {len(STOP_NAME_TOKENS)}")
+except Exception as e:
+    logger.warning(f"Falha ao carregar 'extractor.yml': {e}")
+    STOP_NAME_TOKENS = set()
 
-# Stop words irrelevantes
-CONFIG_PATH = Path(__file__).parent.parent.parent / "configs" / "sanitize.yml"
-with open(CONFIG_PATH, "r", encoding="utf-8") as f:
-    config = yaml.safe_load(f)
+# --- Carregar sanitize.yml ---
+SANITIZE_CONFIG_FILE = CONFIG_DIR / "sanitize.yml"
+try:
+    with open(SANITIZE_CONFIG_FILE, encoding="utf-8") as f:
+        SANITIZE_CONFIG = yaml.safe_load(f)
+    STOP_WORDS = SANITIZE_CONFIG.get("stop_words", [])
+    logger.info(f"Config 'sanitize.yml' carregada com sucesso. Stop words: {len(STOP_WORDS)}")
+except Exception as e:
+    logger.warning(f"Falha ao carregar 'sanitize.yml': {e}")
+    STOP_WORDS = []
 
-STOP_WORDS = config.get("stop_words", [])
-
-# --- carregar arquivo de normalização ---
-CONFIG_PATH = Path(__file__).parent.parent.parent / "configs" / "normalize.json"
-with open(CONFIG_PATH, "r", encoding="utf-8") as f:
-    normalize_config = json.load(f)
-
-COMPLEMENTS = normalize_config.get("complements", {})
-PREFIXES = normalize_config.get("prefixes", {})
+# --- Carregar normalize.json ---
+NORMALIZE_CONFIG_FILE = CONFIG_DIR / "normalize.json"
+try:
+    with open(NORMALIZE_CONFIG_FILE, encoding="utf-8") as f:
+        NORMALIZE_CONFIG = json.load(f)
+    COMPLEMENTS = NORMALIZE_CONFIG.get("complements", {})
+    PREFIXES = NORMALIZE_CONFIG.get("prefixes", {})
+    logger.info(f"Config 'normalize.json' carregada com sucesso. Complements: {len(COMPLEMENTS)}, Prefixes: {len(PREFIXES)}")
+except Exception as e:
+    logger.warning(f"Falha ao carregar 'normalize.json': {e}")
+    COMPLEMENTS = {}
+    PREFIXES = {}

@@ -1,7 +1,9 @@
 import re
 from rapidfuzz import process, fuzz
 from src.utils.config_loader import COMPLEMENTS, PREFIXES
+from src.utils.logger import get_logger
 
+logger = get_logger(__name__)
 
 # Siglas e nomes oficiais
 STATES = {
@@ -20,6 +22,7 @@ def normalize_address_complement(text: str) -> str:
     for i, w in enumerate(words):
         key = w.lower().rstrip(".")
         if key in COMPLEMENTS:
+            logger.debug(f"Substituindo complemento '{w}' por '{COMPLEMENTS[key]}'")
             words[i] = COMPLEMENTS[key]
     return " ".join(words)
 
@@ -35,46 +38,56 @@ def normalize_address_prefix(text: str) -> str:
             if score > best_score:
                 best_score = score
                 best_match = prefix
-        if best_score >= 70:  # limiar razoável
+        if best_score >= 70:
+            logger.debug(f"Prefixo '{w}' normalizado para '{best_match}' (score={best_score})")
             words[i] = best_match
     return " ".join(words)
 
 def normalize_ceps(txt: str) -> str:
+    """Normaliza CEPs, removendo traços e espaços indevidos."""
     def cep_replacer(match):
         digits = re.sub(r'\D', '', match.group())
-        return digits if len(digits) == 8 else match.group()
+        if len(digits) == 8:
+            logger.debug(f"CEP '{match.group()}' normalizado para '{digits}'")
+            return digits
+        else:
+            logger.debug(f"CEP '{match.group()}' ignorado (inválido)")
+            return match.group()
     return re.sub(r'\b\d{5}[-\s]?\d{3}\b', cep_replacer, txt)
 
 def normalize_sn(txt: str) -> str:
-    return re.sub(r"\b(s[\s\-\/]?n|sem\s+n[úu]mero)\b",
-                  "semnumero", txt, flags=re.IGNORECASE)
+    """Substitui 's/n' e variantes por 'semnumero'."""
+    def replacer(match):
+        logger.debug(f"Substituindo '{match.group()}' por 'semnumero'")
+        return "semnumero"
+    return re.sub(r"\b(s[\s\-\/]?n|sem\s+n[úu]mero)\b", replacer, txt, flags=re.IGNORECASE)
 
-def normalize_states(text: str) -> str:  # --- Normaliza estados em siglas (ex: São Paulo vira SP) --- 
+def normalize_states(text: str) -> str:
+    """Normaliza nomes de estados para suas siglas usando fuzzy match se necessário."""
 
-    def get_fuzzy_states(raw_state:str):   
+    def get_fuzzy_states(raw_state: str):
         if not raw_state:
             return None
         s_clean = raw_state.strip().upper()
-        # match exato sigla
         if s_clean in STATES:
+            logger.debug(f"Estado '{raw_state}' já é sigla")
             return s_clean
-        # match exato nome completo
         for sig, name in STATES.items():
             if s_clean == name.upper():
+                logger.debug(f"Estado '{raw_state}' normalizado para sigla '{sig}'")
                 return sig
-        # fuzzy match
         names = list(STATES.values())
         match, score, idx = process.extractOne(s_clean, names, scorer=fuzz.token_sort_ratio)
         if score >= 75:
+            logger.debug(f"Estado '{raw_state}' fuzzy match -> '{list(STATES.keys())[idx]}' (score={score})")
             return list(STATES.keys())[idx]
+        logger.debug(f"Estado '{raw_state}' não pôde ser normalizado")
         return None
 
-    # normalizar estados multi-word
     words = text.split()
     i = 0
     while i < len(words):
         matched = False
-        # tentar n-grams 3,2,1
         for n in [3, 2, 1]:
             if i + n <= len(words):
                 span = " ".join(words[i:i+n])
@@ -84,15 +97,10 @@ def normalize_states(text: str) -> str:  # --- Normaliza estados em siglas (ex: 
                     matched = True
                     break
         i += 1 if not matched else 1
-
-    text = " ".join(words)
-    return text
+    return " ".join(words)
 
 def normalize_case(text: str, preserve_upper=None) -> str:
-    """
-    Capitaliza cada palavra do texto.
-    preserve_upper: lista de palavras/siglas que devem permanecer em maiúsculas
-    """
+    """Capitaliza palavras, preservando certas siglas."""
     if preserve_upper is None:
         preserve_upper = []
     words = text.split()
@@ -105,14 +113,15 @@ def normalize_case(text: str, preserve_upper=None) -> str:
     return " ".join(normalized)
 
 def normalize_numbers(text: str) -> str:
-    """
-    Junta todos os dígitos que estão separados apenas por espaço.
-    Ex: '1 1' -> '11', '123 456 789' -> '123456789'
-    """
-    return re.sub(r'(\d)\s+(?=\d)', r'\1', text)
+    """Remove espaços entre dígitos."""
+    result = re.sub(r'(\d)\s+(?=\d)', r'\1', text)
+    if result != text:
+        logger.debug(f"Números normalizados: '{text}' -> '{result}'")
+    return result
 
-def normalize_full(text: str, for_address = True) -> str:
-    """Executa normalização completa de texto para NER."""
+def normalize_full(text: str, for_address=True) -> str:
+    """Executa pipeline completo de normalização para NER."""
+    logger.debug(f"Pipeline de normalização iniciado: '{text}'")
     if for_address:
         text = normalize_states(text)
         text = normalize_sn(text)
@@ -120,5 +129,6 @@ def normalize_full(text: str, for_address = True) -> str:
         text = normalize_address_complement(text)
     text = normalize_ceps(text)
     text = normalize_case(text)
-    print(f"Normalize Pipeline: {text}")
+    text = normalize_numbers(text)
+    logger.debug(f"Pipeline de normalização concluído: '{text}'")
     return text
