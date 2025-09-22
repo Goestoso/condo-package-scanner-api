@@ -60,17 +60,22 @@ tesseract imagem.jpg saida.txt -l por
 ```
 order-scanner-api/
 │
-├─ assets/               # Imagens usadas para OCR e testes
-├─ configs/              # Configurações de nomes e endereços para treinar NER
+├─ assets/               # Imagens usadas para testes de extração
+├─ configs/              # Configurações de treinamentos, sanitização e logger
 ├─ data/                 # Datasets de treinamento e auxiliares
 ├─ models/               # Modelos NER treinados
 ├─ scripts/              # Scripts para gerar datasets e atualizar modelos
 ├─ src/                  # Código-fonte principal do projeto
-├─ tests/                # Testes unitários
+├─ tests/                # Testes unitários e de integração
 └─ order_scanner_api     # Executável da API
 ```
 
 ## Treinamentos de modelos NER
+
+O projeto permite treinar modelos NER do zero para nomes e endereços, assim como atualizar ou reforçar modelos já existentes usando fine-tuning.
+
+### Treinamento do zero
+
 O projeto permite treinar modelos NER do zero para nomes e endereços.
 
 **Pontos importantes**:
@@ -95,3 +100,162 @@ python -m spacy train configs/model_config.cfg --output models/model_ner --gpu-i
 - `--output models/name_ner`: diretório onde o modelo treinado será salvo.
 
 - `--gpu-id 0`: ID da GPU a ser utilizada (opcional; remova ou use `--gpu-id -1` para CPU).
+
+### Atualização / Fine-Tuning de Modelos
+
+O projeto permite atualizar modelos NER existentes de duas maneiras, dependendo do objetivo: ***fine-tuning para correção de erros específicos*** e ***atualização geral***.
+
+> **💡 Dica**: Sempre teste o modelo atualizado em um conjunto de validação antes de colocar em produção. Ajustes nos scripts podem ser necessários dependendo do hardware, tamanho do dataset e estratégia de treinamento.
+
+#### 1. Fine-Tuning para Correção de Erros Específicos (`update_fine_tuning_ner_model.py`)
+
+- Objetivo: corrigir falhas específicas do modelo sem afetar o restante do conhecimento já aprendido.
+
+- Passos:
+
+1. Identificar os erros ou falhas do modelo atual (ex.: nomes ou endereços que não foram detectados corretamente).
+
+2. Criar um dataset específico de fine-tuning (model_erros.json) contendo apenas os casos que precisam ser corrigidos.
+
+3. Criar e executar o script de fine-tuning:
+```
+python scripts/update_fine_tuning_ner_model.py
+```
+
+- **Observação**: este processo mantém o conhecimento antigo do modelo e reforça áreas problemáticas.
+
+#### 2. Atualização Geral com Novos Dados (`update_ner_model.py`)
+
+- Objetivo: ensinar novos dados e estratégias ao modelo, expandindo seu conhecimento.
+
+- Passos:
+
+1. Atualizar os scripts de geração de datasets:
+    - `generate_names.py`
+    - `generate_address.py`
+
+2. Atualizar datasets auxiliares, como:
+    - `names_contexts`
+    - `neighborhoods`
+    - `cond_names`
+    - `extra_words`
+
+3. Executar o script de atualização geral:
+```
+python scripts/update_ner_model.py
+```
+- **Observação**: este processo amplia o modelo, incorporando novos dados e contextos, mas pode alterar o desempenho em exemplos antigos se não for feito com cuidado.
+
+## Pipeline Completo de Extração
+
+O pipeline de extração de dados funciona da seguinte forma:
+
+1. **OCR com Tesseract**
+
+- O texto é extraído da imagem da etiqueta usando o Tesseract OCR (`pytesseract`).
+
+- Resultado: texto bruto contendo informações do destinatário.
+
+2. **Pipeline de Normalização do Texto**
+
+- Função `normalize_full` do módulo `normalize.py`.
+
+- Padroniza maiúsculas/minúsculas, estados, CEPs, números e complementos.
+
+- Resultado: texto consistente e padronizado, pronto para NER.
+
+3. **Pipeline de Sanitização do Texto**
+
+- Função `sanitize_full` do módulo `sanitize.py`.
+
+- Remove stopwords, códigos alfanuméricos, links e tokens irrelevantes.
+
+- Resultado: texto limpo e filtrado, pronto para detecção de entidades.
+
+4. **NER (Named Entity Recognition)**
+
+- Modelos spaCy treinados detectam candidatos a nomes (`PERSON`) e endereços (`STREET`, `NUMBER`, `COMPLEMENT`, `CITY`, `STATE`).
+
+- Resultado: lista de candidatos detectados em cada categoria.
+
+5. **Fuzzy Match para Validação e Normalização**
+
+- Cada candidato é comparado com os dados reais do banco (`TEST_MORADORES` e `TEST_ADDRESSES`) usando `rapidfuzz`.
+
+- Apenas candidatos que passam no limiar de similaridade (ex: ≥70) são considerados válidos.
+
+- Resultado: atributos `recipient_name` e `recipient_address` preenchidos com os candidatos normalizados.
+
+6. **Fallback do Fuzzy Match**
+
+- Caso o NER não reconheça nenhum candidato, o texto é tokenizado e submetido a um fuzzy match geral contra os dados do banco.
+
+- Este fallback tem baixa probabilidade de sucesso, e deve ser usado apenas como último recurso.
+
+- Resultado: possível preenchimento dos atributos, caso haja correspondência, ou atributos vazios se nenhuma correspondência for encontrada.
+
+
+```
+Resumo gráfico do fluxo:
+
+Imagem da etiqueta
+        │
+        ▼
+   Tesseract OCR
+        │
+        ▼
+  Normalização do texto
+        │
+        ▼
+  Sanitização do texto
+        │
+        ▼
+     NER (spaCy)
+        │
+        ▼
+ Fuzzy Match com dados reais
+        │
+        ▼
+Atributos preenchidos ou fallback
+```
+
+> **Observação**: Sempre dê prioridade ao pipeline padrão (NER + Fuzzy Match). O fallback é apenas uma tentativa de capturar dados que não foram reconhecidos inicialmente.
+
+## Logging
+
+O projeto utiliza logging para monitoramento do pipeline, debug e rastreamento de erros.
+
+**Configuração**
+
+- Níveis de log:
+    - `DEBUG`: detalhes do pipeline (candidatos NER, fuzzy match, etc.)
+    - `INFO`: progresso geral e resultados finais
+    - `WARNING` / `ERROR`: avisos e erros críticos
+
+- Configuração padrão grava logs no console, podendo ser ajustada para arquivos em `configs/logger_config.yml`.
+
+**Uso nos módulos**
+
+- **Sticker**: logs sobre extração de texto OCR (`DEBUG` / `INFO`).
+
+- **Extractor**: logs detalhados sobre:
+      - Normalização e sanitização
+      - Entidades detectadas pelo NER
+      - Resultados do fuzzy match e fallback
+      - Definição final de recipient_name e recipient_address
+
+**Exemplo de saída**
+```
+[INFO] OCR concluído: texto extraído da etiqueta
+[DEBUG] Sanitize Pipeline: "Rua Ana 35 Carapicuiba SP"
+[DEBUG] Candidatos detectados pelo Name NER: ["Mauricio de Souza"]
+[INFO] Nome final detectado pelo NER + Fuzzy: Mauricio de Souza
+[DEBUG] Candidatos de endereço detectados pelo NER: ["Rua Ana 35", "Carapicuiba", "SP"]
+[INFO] Endereço final detectado pelo NER + Fuzzy: Rua Ana 35 Carapicuiba SP
+```
+
+**Observações**
+
+- Mantenha `DEBUG` durante testes e ajustes de modelos.
+- Em produção, utilize `INFO` ou `WARNING` para reduzir mensagens.
+- Logs ajudam a identificar problemas no OCR, NER ou fuzzy match.
