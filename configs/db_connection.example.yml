@@ -1,0 +1,9 @@
+# configs/db_connection.example.yml
+server: condominio-server.database.windows.net
+database: db-condominios-encomendas
+username: admincondominio
+password: sua_senha_aqui
+driver: "{ODBC Driver 18 for SQL Server}"
+encrypt: yes
+trust_server_certificate: no
+connection_timeout: 30
