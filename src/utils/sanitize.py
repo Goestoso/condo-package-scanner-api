@@ -15,13 +15,28 @@ STATE_ABBR = {
 # Carrega stop tokens e stop words sob demanda
 def get_stop_name_tokens():
     cfg = config_loader.load_extractor_config()
-    logger.debug(f"Stop name tokens carregados: {cfg}")
-    return set(cfg.get("stop_name_tokens", []))
+    if isinstance(cfg, dict):
+        tokens = cfg.get("stop_name_tokens", [])
+    elif isinstance(cfg, list):
+        tokens = cfg
+    else:
+        tokens = []
+    logger.debug(f"Stop name tokens carregados: {tokens}")
+    return set(tokens)
+
 
 def get_stop_words():
     cfg = config_loader.load_sanitize_config()
-    logger.debug(f"Stop words carregadas: {cfg}")
-    return cfg.get("stop_words", [])
+    # se cfg for lista, retorna ela mesma; se for dict, pega a chave
+    if isinstance(cfg, dict):
+        stop_words = cfg.get("stop_words", [])
+    elif isinstance(cfg, list):
+        stop_words = cfg
+    else:
+        stop_words = []
+    logger.debug(f"Stop words carregadas: {stop_words}")
+    return stop_words
+
 
 def sanitize_name_cand(candidate: str) -> str:
     """Sanitiza um candidato a nome, removendo stop tokens, números e romanos"""
@@ -117,12 +132,12 @@ def remove_codes(text: str, min_len: int = 3) -> str:
     return text
 
 
-def sanitize_full(text: str, stop_words=get_stop_words(), min_words=2, for_ner=True, clear_cep=False, remove_acc=True) -> str:
+def sanitize_full(text: str, stop_words=None, min_words=2, for_ner=True, clear_cep=False, remove_acc=True):
+    if stop_words is None:
+        stop_words = get_stop_words()
+
     if not text:
         return ""
-
-    if stop_words is None:
-        stop_words = []
 
     logger.debug(f"Pipeline de sanitização iniciado: '{text}'")
 

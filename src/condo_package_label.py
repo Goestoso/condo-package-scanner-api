@@ -3,7 +3,7 @@ import pytesseract
 from pathlib import Path
 from src.utils.logger import get_logger
 
-class Sticker:
+class CondoPackageLabel:
 
     def __init__(self, image: str):
         self.logger = get_logger(self.__class__.__name__)
