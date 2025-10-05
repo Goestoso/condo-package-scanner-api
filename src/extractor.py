@@ -9,25 +9,6 @@ from itertools import product
 
 class Extractor(Sticker):
 
-    TEST_MORADORES = [
-        "Mauricio de Souza", "Leonardo Sampaio", "Jonas Moraes", 
-        "João Dias", "Maria Oliveira", "Ruan Rodrigues Da Silva",
-        "Ana dos Anjos", "Ana Aguiar Moraes", "Pedro Henrique Parizoti Meyer",
-        "Miguel Savio Pereira de Castro", "Sarah Oliveira"
-    ]
-
-    TEST_ADDRESSES = [
-        "Rua Ana 35 Vila Maria Helena Carapicuiba SP",
-        "Rua Ana 35 Carapicuiba SP",
-        "Avenida Brigadeiro Luis Antonio 1272 Apartamento 16 Sao Paulo SP",
-        "Rua Iara 476 Parque dos Camargos Barueri SP",
-        "Rua Dos Pregos 476 Condomino Ipe Apartamento 701 Sao Paulo SP",
-        "Rua XV de Novembro 500 Bloco 2 Apartamento 12 Jardim Gabriela Jandira SP",
-        "Avenida Das Flores 1011 Bloco B Apartamento 715 Centro Varginha MG",
-        "Avenida Das Flores",
-        "Rua Jonas Fonseca 2501 Condominio Marrom Apartamento 404 Sao Goncalo RJ"
-    ]
-
     __MODEL_NAME_PATH = Path(__file__).parent.parent / "models" / "name_ner" / "model-last"
     __MODEL_ADDRESS_PATH = Path(__file__).parent.parent / "models" / "address_ner" / "model-last"
 
@@ -36,6 +17,7 @@ class Extractor(Sticker):
         self.logger = get_logger(self.__class__.__name__)
         self.__recipient_name = ""
         self.__recipient_address = ""
+        self.__names
         
         self.logger.info("Carregando modelos NER...")
         self.nlp_name = spacy.load(self.__MODEL_NAME_PATH)
@@ -90,10 +72,10 @@ class Extractor(Sticker):
                         candidates.append(ent.text)
             candidates = list(set(candidates))
 
-        self.logger.debug(f"Candidatos detectados pelo NER: {candidates}")
+        self.logger.debug(f"Candidatos a moradores detectados pelo NER: {candidates}")
 
         filtered_candidates = [sanitize_name_cand(c) for c in candidates if sanitize_name_cand(c)]
-        self.logger.debug(f"Candidatos após sanitização: {filtered_candidates}")
+        self.logger.debug(f"Candidatos a moradores após sanitização: {filtered_candidates}")
 
         residents_clean = [r.lower() for r in self.TEST_MORADORES]
         residents_first = [r.split()[0].lower() for r in self.TEST_MORADORES]
@@ -103,9 +85,18 @@ class Extractor(Sticker):
         for cand in filtered_candidates:
             cand_clean = cand.lower()
             cand_tokens = cand_clean.split()
+            
+            self.logger.debug(f"🔎 Avaliando candidato: '{cand}' (tokens: {cand_tokens})")
+
             if len(cand_tokens) == 1 or len(cand_clean) <= 5:
                 match_first = process.extractOne(cand_tokens[0], residents_first, scorer=fuzz.token_set_ratio)
                 match_last = process.extractOne(cand_tokens[0], residents_last, scorer=fuzz.token_set_ratio)
+
+                if match_first:
+                    self.logger.debug(f"   → Match first: {match_first[0]} (score={match_first[1]})")
+                if match_last:
+                    self.logger.debug(f"   → Match last: {match_last[0]} (score={match_last[1]})")
+
                 if match_first and match_first[1] > best_score:
                     idx = residents_first.index(match_first[0])
                     best_candidate = cand
@@ -118,6 +109,10 @@ class Extractor(Sticker):
                     best_score = match_last[1]
             else:
                 match = process.extractOne(cand_clean, residents_clean, scorer=fuzz.token_set_ratio)
+
+                if match:
+                    self.logger.debug(f"   → Match full: {match[0]} (score={match[1]})")
+
                 if match and match[1] > best_score:
                     best_candidate = cand
                     best_match = self.TEST_MORADORES[residents_clean.index(match[0])]
@@ -145,7 +140,7 @@ class Extractor(Sticker):
                 if cleaned:
                     candidates_by_type[ent.label_].append(cleaned)
 
-        self.logger.debug(f"Candidatos por tipo: {candidates_by_type}")
+        self.logger.debug(f"Candidatos a endereços por tipo: {candidates_by_type}")
 
         all_combinations = list(product(
             candidates_by_type["STREET"] or [""],

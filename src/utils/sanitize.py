@@ -1,5 +1,5 @@
 import unicodedata, re
-from src.utils.config_loader import STOP_WORDS, STOP_NAME_TOKENS
+import src.utils.config_loader as config_loader
 from src.utils.normalize import normalize_numbers
 from src.utils.logger import get_logger
 
@@ -12,10 +12,21 @@ STATE_ABBR = {
     "RS","RO","RR","SC","SP","SE","TO"
 }
 
+# Carrega stop tokens e stop words sob demanda
+def get_stop_name_tokens():
+    cfg = config_loader.load_extractor_config()
+    logger.debug(f"Stop name tokens carregados: {cfg}")
+    return set(cfg.get("stop_name_tokens", []))
+
+def get_stop_words():
+    cfg = config_loader.load_sanitize_config()
+    logger.debug(f"Stop words carregadas: {cfg}")
+    return cfg.get("stop_words", [])
+
 def sanitize_name_cand(candidate: str) -> str:
     """Sanitiza um candidato a nome, removendo stop tokens, números e romanos"""
     from src.utils.utils import is_roman
-    stop_lower = [t.lower() for t in STOP_NAME_TOKENS]
+    stop_lower = [t.lower() for t in get_stop_name_tokens()]
     tokens = candidate.split()
     cleaned_tokens = []
 
@@ -37,7 +48,9 @@ def sanitize_name_cand(candidate: str) -> str:
     return result
 
 
-def remove_stop_words(text: str, stop_words: list[str]) -> str:
+def remove_stop_words(text: str, stop_words=None) -> str:
+    if stop_words is None:
+        stop_words = get_stop_words()
     original = text
     for word in stop_words:
         text = re.sub(rf"\b{word}\w*\b", "", text, flags=re.IGNORECASE)
@@ -104,7 +117,7 @@ def remove_codes(text: str, min_len: int = 3) -> str:
     return text
 
 
-def sanitize_full(text: str, stop_words=STOP_WORDS, min_words=2, for_ner=True, clear_cep=False, remove_acc=True) -> str:
+def sanitize_full(text: str, stop_words=get_stop_words(), min_words=2, for_ner=True, clear_cep=False, remove_acc=True) -> str:
     if not text:
         return ""
 

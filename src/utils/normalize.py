@@ -1,6 +1,6 @@
 import re
 from rapidfuzz import process, fuzz
-from src.utils.config_loader import COMPLEMENTS, PREFIXES
+import src.utils.config_loader as config_loader
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -18,6 +18,7 @@ STATES = {
 
 def normalize_address_complement(text: str) -> str:
     """Substitui abreviações de complementos por palavras completas."""
+    COMPLEMENTS = config_loader.load_normalize_config()[0]  # só os complements
     words = text.split()
     for i, w in enumerate(words):
         key = w.lower().rstrip(".")
@@ -28,6 +29,7 @@ def normalize_address_complement(text: str) -> str:
 
 def normalize_address_prefix(text: str) -> str:
     """Normaliza prefixos de logradouro usando fuzzy match."""
+    PREFIXES = config_loader.load_normalize_config()[1]  # só os prefixes
     words = text.split()
     for i, w in enumerate(words):
         w_lower = w.lower()
