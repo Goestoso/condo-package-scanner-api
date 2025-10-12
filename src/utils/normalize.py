@@ -1,4 +1,5 @@
 import re
+import unicodedata
 from rapidfuzz import process, fuzz
 import src.utils.config_loader as config_loader
 from src.utils.logger import get_logger
@@ -15,6 +16,18 @@ STATES = {
     "RS": "RIO GRANDE DO SUL", "RO": "RONDÔNIA", "RR": "RORAIMA", "SC": "SANTA CATARINA",
     "SP": "SÃO PAULO", "SE": "SERGIPE", "TO": "TOCANTINS"
 }
+
+def normalize_name(name: str) -> str:
+    """Normaliza um nome: remove acentos e ajusta capitalização."""
+    if not name:
+        return ""
+    name_clean = ''.join(
+        c for c in unicodedata.normalize('NFD', name)
+        if unicodedata.category(c) != 'Mn'
+    )
+    # Capitaliza cada palavra
+    name_clean = ' '.join(word.capitalize() for word in name_clean.split())
+    return name_clean
 
 def normalize_address_complement(text: str) -> str:
     """Substitui abreviações de complementos por palavras completas."""

@@ -3,7 +3,7 @@ from src.utils.logger import get_logger
 from src.utils.normalize import normalize_full
 from src.utils.sanitize import sanitize_full
 from pathlib import Path
-import spacy
+import spacy, re
 
 class Extractor(CondoPackageLabel):
 
@@ -57,6 +57,43 @@ class Extractor(CondoPackageLabel):
 
         self.__candidates_address = candidates
         self.logger.debug(f"Candidatos a endereços extraídos: {self.candidates_address}")
+
+    def extract_apartment_and_block(self) -> dict | None:
+        """
+        Extrai número de apartamento e bloco a partir dos candidatos de endereço.
+        Busca em todos os labels extraídos.
+        Retorna dict com as chaves 'apartment' e/ou 'block', ou None se nada for encontrado.
+        """
+        apartment = None
+        block = None
+
+        apt_pattern = re.compile(r'\b(?:ap|apt|apartamento)\s*(\d{1,4})\b', re.IGNORECASE)
+        block_pattern = re.compile(r'\b(?:bloco|bl|blc)\s*([A-Z0-9]{1,3})\b', re.IGNORECASE)
+
+        for label, texts in self.__candidates_address.items():
+            for text in texts:
+                if not apartment:
+                    apt_match = apt_pattern.search(text)
+                    if apt_match:
+                        apartment = apt_match.group(1)
+                        self.logger.debug(f"Apartamento detectado em {label}: {apartment}")
+
+                if not block:
+                    block_match = block_pattern.search(text)
+                    if block_match:
+                        block = block_match.group(1)
+                        self.logger.debug(f"Bloco detectado em {label}: {block}")
+
+                if apartment and block:
+                    break
+
+        if not apartment and not block:
+            self.logger.info("Nenhum bloco ou apartamento identificado no endereço extraído.")
+            return None
+
+        result = {"apartment": apartment, "block": block}
+        self.logger.info(f"Unidade identificada: {result}")
+        return result
 
     def __str__(self):
         return (

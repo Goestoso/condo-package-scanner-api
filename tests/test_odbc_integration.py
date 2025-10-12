@@ -5,7 +5,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 
 # test_db_connection.py
-from src.odbc_api import ODBCConnection
+from src.db.odbc_api import ODBCConnection
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)

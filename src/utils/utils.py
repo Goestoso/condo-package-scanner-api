@@ -1,5 +1,6 @@
 import re
 from src.utils.logger import get_logger
+from rapidfuzz import process, fuzz
 
 logger = get_logger(__name__)
 
@@ -26,3 +27,17 @@ def find_codes(text: str):
     if codes:
         logger.debug(f"find_codes: encontrados {len(codes)} código(s): {codes}")
     return codes
+
+def fuzzy_compare(candidates:list, name: str, threshold: int = 70) -> list[tuple[str, int]]:
+    """
+    Compara um nome os nomes do banco usando fuzzy matching.
+    Retorna lista de tuplas (nome_do_banco, score) acima do threshold.
+    """
+
+    matches = process.extract(
+        name,
+        candidates,
+        scorer=fuzz.token_set_ratio,
+        score_cutoff=threshold
+    )
+    return matches  # [(nome, score), ...]
