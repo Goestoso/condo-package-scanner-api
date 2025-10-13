@@ -1,14 +1,25 @@
 # Order Scanner API
-API para extração de dados de moradores a partir de etiquetas de encomendas
+API para extração de dados de moradores a partir de etiquetas de encomendas em condomínios, com validação automática contra o banco de dados de moradores.
 
 ## Descrição
-Este projeto consiste em uma API que extrai informações de moradores (como nome, endereço e complemento) a partir de imagens de etiquetas de encomendas em condomínios.
-O pipeline utiliza OCR (Tesseract) para reconhecimento de texto, NER (spaCy) para identificar nomes e endereços, e rapidfuzz para correção e normalização de dados.
+Este projeto consiste em uma API que extrai informações de moradores (nome, endereço e complemento) a partir de imagens de etiquetas de encomendas. O pipeline realiza:
+
+- OCR do texto da etiqueta (Tesseract)
+
+- Detecção de entidades (NER spaCy) para nomes e endereços
+
+- Sanitização e normalização de candidatos (remoção de stop tokens, números, romanos e abreviações de endereço)
+
+- Validação de nomes e endereços com fuzzy matching usando dados reais do banco
+
+- Validação opcional por unidade (apartamento/bloco) para filtrar resultados irrelevantes
+
 ## Tecnologias
 - Python 3.13
 - [Tesseract OCR](https://github.com/tesseract-ocr/tesseract)
 - [spaCy](https://spacy.io) para NER
 - [rapidfuzz](https://rapidfuzz.github.io/RapidFuzz) para fuzzy matching e normalização
+- Logging integrado para debug e rastreamento
 
 ## Instalação 
 1. Clone o repositório:
@@ -58,16 +69,16 @@ tesseract imagem.jpg saida.txt -l por
 
 ## Estrutura do projeto
 ```
-order-scanner-api/
+condo-package-scanner-api/
 │
-├─ assets/               # Imagens usadas para testes de extração
-├─ configs/              # Configurações de treinamentos, sanitização e logger
-├─ data/                 # Datasets de treinamento e auxiliares
+├─ assets/               # Imagens para teste
+├─ configs/              # Configurações (normalização, logger, sanitização)
+├─ data/                 # Datasets auxiliares
 ├─ models/               # Modelos NER treinados
-├─ scripts/              # Scripts para gerar datasets e atualizar modelos
-├─ src/                  # Código-fonte principal do projeto
-├─ tests/                # Testes unitários e de integração
-└─ order_scanner_api     # Executável da API
+├─ scripts/              # Scripts para atualização de datasets e modelos
+├─ src/                  # Código-fonte principal
+├─ tests/                # Testes unitários e integração
+└─ CondoPackageScannerAPI     # Executável da API
 ```
 
 ## Treinamentos de modelos NER
@@ -160,7 +171,7 @@ O pipeline de extração de dados funciona da seguinte forma:
 
 - Função `normalize_full` do módulo `normalize.py`.
 
-- Padroniza maiúsculas/minúsculas, estados, CEPs, números e complementos.
+- Padroniza maiúsculas/minúsculas, estados, CEPs, números (inclui romanos também) e complementos.
 
 - Resultado: texto consistente e padronizado, pronto para NER.
 
@@ -178,21 +189,23 @@ O pipeline de extração de dados funciona da seguinte forma:
 
 - Resultado: lista de candidatos detectados em cada categoria.
 
-5. **Fuzzy Match para Validação e Normalização**
+- Se nenhum candidato for idenficado pelo NER, será necessário uma nova imagem com as informações necessárias mais nítidas.
 
-- Cada candidato é comparado com os dados reais do banco (`TEST_MORADORES` e `TEST_ADDRESSES`) usando `rapidfuzz`.
+5. **Validação Fuzzy** 
 
-- Apenas candidatos que passam no limiar de similaridade (ex: ≥70) são considerados válidos.
+- Compara candidatos com moradores do banco de dados usando `rapidfuzz`.
 
-- Resultado: atributos `recipient_name` e `recipient_address` preenchidos com os candidatos normalizados.
+- Limiar de similaridade padrão: **≥70**.
 
-6. **Fallback do Fuzzy Match**
+- Resultados múltiplos: seleciona o(s) mais próximo(s) do candidato NER.
 
-- Caso o NER não reconheça nenhum candidato, o texto é tokenizado e submetido a um fuzzy match geral contra os dados do banco.
+6. **Validação por Unidade (Opcional)**
 
-- Este fallback tem baixa probabilidade de sucesso, e deve ser usado apenas como último recurso.
+- Se bloco/apartamento identificados, restringe o fuzzy match apenas aos moradores daquela unidade, evitando resultados irrelevantes.
 
-- Resultado: possível preenchimento dos atributos, caso haja correspondência, ou atributos vazios se nenhuma correspondência for encontrada.
+- Evita incluir nomes irrelevantes do texto da etiqueta.
+
+- Pode usar fallback global se nenhum candidato for encontrado na unidade.
 
 
 ```
@@ -204,19 +217,20 @@ Imagem da etiqueta
    Tesseract OCR
         │
         ▼
-  Normalização do texto
+  Normalização + Sanitização
         │
         ▼
-  Sanitização do texto
+        NER
         │
         ▼
-     NER (spaCy)
+Fuzzy Match com moradores
         │
         ▼
- Fuzzy Match com dados reais
+Validação por unidade (opcional)
         │
         ▼
-Atributos preenchidos ou fallback
+Atributos preenchidos
+
 ```
 
 > **Observação**: Sempre dê prioridade ao pipeline padrão (NER + Fuzzy Match). O fallback é apenas uma tentativa de capturar dados que não foram reconhecidos inicialmente.
