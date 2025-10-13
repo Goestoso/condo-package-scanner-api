@@ -1,6 +1,6 @@
 import unicodedata, re
 from src.utils.config_loader import load_stop_words, load_stop_name_tokens
-from src.utils.normalize import normalize_numbers
+from src.utils.normalize import normalize_numbers, normalize_address_complement
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -18,6 +18,8 @@ def sanitize_name_cand(candidate: str, stop_tokens: set[str] | None = None) -> s
 
     if stop_tokens is None:
         stop_tokens = load_stop_name_tokens()
+
+    candidate = normalize_address_complement(candidate)
 
     stop_lower = {t.lower() for t in stop_tokens}
     tokens = candidate.split()

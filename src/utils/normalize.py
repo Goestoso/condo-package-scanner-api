@@ -40,6 +40,39 @@ def normalize_address_complement(text: str) -> str:
             words[i] = COMPLEMENTS[key]
     return " ".join(words)
 
+def normalize_block(block: str | None) -> str | None:
+    """
+    Normaliza o bloco, convertendo números em letras.
+    Exemplo: 1 → A, 2 → B, 3 → C, etc.
+    """
+    if not block:
+        return None
+
+    block = str(block).strip().upper()
+
+    # Mapeamento básico de número → letra
+    mapping = {
+        "1": "A", "2": "B", "3": "C", "4": "D", "5": "E", "6": "F",
+        "7": "G", "8": "H", "9": "I", "10": "J"
+    }
+
+    # Se for um número válido, converte
+    if block in mapping:
+        return mapping[block]
+
+    # Se já for letra, normaliza (ex: "bloco a" → "A")
+    for prefix in ["BLOCO", "BL", "B"]:
+        if block.startswith(prefix):
+            block = block.replace(prefix, "").strip()
+            break
+
+    # Mantém só a letra, se for o caso
+    if len(block) == 1 and block.isalpha():
+        return block.upper()
+
+    return block
+
+
 def normalize_address_prefix(text: str) -> str:
     """Normaliza prefixos de logradouro usando fuzzy match."""
     PREFIXES = config_loader.load_normalize_config()[1]  # só os prefixes

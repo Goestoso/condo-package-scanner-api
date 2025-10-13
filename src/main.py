@@ -8,6 +8,8 @@ Módulo principal que centraliza a lógica do programa:
 
 from src.extractor import Extractor
 from src.utils.validators import validate_recipient_name_candidates, validate_recipient_name_by_unit
+from src.utils.normalize import normalize_block
+from src.utils.sanitize import sanitize_name_cand
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -25,30 +27,29 @@ def main(image_path: str):
     # --- 3. Extrai candidatos a nomes (NER) ---
     extractor.extract_recipient_name()
     candidates = extractor.candidates_name
-    logger.info(f"Candidatos NER extraídos: {candidates}")
 
-    # --- 4. Valida nomes extraídos ---
-    validated_names = validate_recipient_name_candidates(candidates)
-    extractor.validated_names = validated_names
-    logger.info(f"Nomes validados: {validated_names}")
+    # --- 3.1. Sanitiza os candidatos ---
+    sanitized_candidates = {sanitize_name_cand(c) for c in candidates if sanitize_name_cand(c)}
+    logger.debug(f"Candidatos a nomes sanitizados: {sanitized_candidates}")
 
-    # --- 5. Extrai endereço ---
+    # --- 4. Extrai endereço ---
     extractor.extract_recipient_address()
-    address = extractor.recipient_address
-    logger.info(f"Endereço extraído: {address}")
+    address = extractor.candidates_address
+    logger.debug(f"Endereço extraído: {address}")
 
-    # --- 6. Extrai ap/bloco ---
+    # --- 5. Extrai ap/bloco ---
     unit_info = extractor.extract_apartment_and_block()
+    unit_info['block'] = normalize_block(unit_info['block'])
 
-    # --- 7. Escolhe o tipo de validação ---
+    # --- 6. Escolhe o tipo de validação ---
     if unit_info:
         logger.info(f"Validando por unidade: {unit_info}")
-        validated_names = validate_recipient_name_by_unit(unit_info, extractor.candidates_name)
+        validated_names = validate_recipient_name_by_unit(unit_info, sanitized_candidates)
     else:
         logger.info("Nenhuma unidade identificada. Usando validação apenas por nome.")
-        validated_names = validate_recipient_name_candidates(extractor.candidates_name)
+        validated_names = validate_recipient_name_candidates(sanitized_candidates)
 
-    # --- 8. Resultado final ---
+    # --- 7. Resultado final ---
     result = {
         "names": list(validated_names),
         "unit_info": unit_info

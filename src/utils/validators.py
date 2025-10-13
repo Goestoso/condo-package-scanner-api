@@ -93,7 +93,7 @@ def validate_recipient_name_candidates(candidates: set):
             else:
                 logger.info(f"Nenhum match encontrado para '{name}' mesmo após fallback completo.")
 
-    logger.info(f"Validação concluída. Nomes validados: {validated_names}")
+    logger.debug(f"Validação concluída. Nomes validados: {validated_names}")
     return validated_names
 
 def validate_recipient_name_by_unit(unit_info: dict, name_candidates: set) -> set:
@@ -143,14 +143,15 @@ def validate_recipient_name_by_unit(unit_info: dict, name_candidates: set) -> se
 
     # --- 3. Seleciona os melhores resultados ---
     for ner_name, matches in all_matches:
-        strong = {normalize_name(match) for match, score in matches if score >= 70}
+        # Ignorando o terceiro valor retornado pelo fuzzy_compare (_)
+        strong = {normalize_name(match) for match, score, _ in matches if score >= 70}
         if strong:
             validated_names.update(strong)
             logger.info(f"Nome '{ner_name}' validado via fuzzy forte (>=70): {strong}")
         else:
             # fallback: usa os com score máximo
-            max_score = max(score for _, score in matches)
-            near = {normalize_name(match) for match, score in matches if score == max_score}
+            max_score = max(score for _, score, _ in matches)
+            near = {normalize_name(match) for match, score, _ in matches if score == max_score}
             validated_names.update(near)
             logger.info(f"Nome '{ner_name}' validado via fuzzy fallback (score {max_score}): {near}")
 
