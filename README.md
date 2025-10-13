@@ -233,8 +233,6 @@ Atributos preenchidos
 
 ```
 
-> **Observação**: Sempre dê prioridade ao pipeline padrão (NER + Fuzzy Match). O fallback é apenas uma tentativa de capturar dados que não foram reconhecidos inicialmente.
-
 ## Logging
 
 O projeto utiliza logging para monitoramento do pipeline, debug e rastreamento de erros.
