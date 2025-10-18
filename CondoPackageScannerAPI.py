@@ -6,4 +6,4 @@ from src.main import main
 
 if __name__ == '__main__':
 
-    main("claudio.jpg")
+    main("ml_aba_zoom.jpg")

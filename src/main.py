@@ -7,7 +7,7 @@ Módulo principal que centraliza a lógica do programa:
 """
 
 from src.extractor import Extractor
-from src.utils.validators import validate_recipient_name_candidates, validate_recipient_name_by_unit
+from src.utils.validators import validate_recipient_name_candidates, validate_recipient_name_by_unit, validate_recipient_name_by_apartment, validate_recipient_name_by_block, fill_missing_unit_info
 from src.utils.normalize import normalize_block
 from src.utils.sanitize import sanitize_name_cand
 from src.utils.logger import get_logger
@@ -42,14 +42,20 @@ def main(image_path: str):
     unit_info['block'] = normalize_block(unit_info['block'])
 
     # --- 6. Escolhe o tipo de validação ---
-    if unit_info:
-        logger.info(f"Validando por unidade: {unit_info}")
+    if unit_info.get('apartment') and unit_info.get('block'):
         validated_names = validate_recipient_name_by_unit(unit_info, sanitized_candidates)
+    elif unit_info.get('apartment'):
+        validated_names = validate_recipient_name_by_apartment(unit_info['apartment'], sanitized_candidates)
+    elif unit_info.get('block'):
+        validated_names = validate_recipient_name_by_block(unit_info['block'], sanitized_candidates)
     else:
-        logger.info("Nenhuma unidade identificada. Usando validação apenas por nome.")
         validated_names = validate_recipient_name_candidates(sanitized_candidates)
 
-    # --- 7. Resultado final ---
+    # --- 7. Preenche dados faltantes de unidade com base nos nomes validados ---
+    if validated_names:
+        unit_info = fill_missing_unit_info(validated_names, unit_info)
+
+    # --- 8. Resultado final ---
     result = {
         "names": list(validated_names),
         "unit_info": unit_info

@@ -114,7 +114,7 @@ def get_residents_by_apartment(unidade: str) -> list[str]:
         query = """
             SELECT m.nome
             FROM moradores m
-            JOIN unidades u ON m.unidade_id = u.id
+            JOIN unidades u ON m.id_unidade = u.id_unidade
             WHERE u.numero_unidade = ?
         """
         cursor.execute(query, (unidade,))
@@ -142,8 +142,8 @@ def get_residents_by_block(bloco: str, name_like: str | None = None) -> list[str
             query = """
                 SELECT m.nome
                 FROM moradores m
-                JOIN unidades u ON m.unidade_id = u.id
-                JOIN blocos b ON u.bloco_id = b.id
+                JOIN unidades u ON m.id_unidade = u.id_unidade
+                JOIN blocos b ON u.id_bloco = b.id_bloco
                 WHERE b.nome_bloco = ? AND m.nome LIKE ?
             """
             like_pattern = f"%{name_like}%"
@@ -152,8 +152,8 @@ def get_residents_by_block(bloco: str, name_like: str | None = None) -> list[str
             query = """
                 SELECT m.nome
                 FROM moradores m
-                JOIN unidades u ON m.unidade_id = u.id
-                JOIN blocos b ON u.bloco_id = b.id
+                JOIN unidades u ON m.id_unidade = u.id_unidade
+                JOIN blocos b ON u.id_bloco = b.id_bloco
                 WHERE b.nome_bloco = ?
             """
             cursor.execute(query, (bloco,))
@@ -165,3 +165,31 @@ def get_residents_by_block(bloco: str, name_like: str | None = None) -> list[str
     finally:
         conn.close()
     return results
+
+def get_unit_info_by_name(name: str) -> dict | None:
+    """
+    Consulta o banco e retorna a unidade (apartamento + bloco) de um morador pelo nome exato.
+    
+    Retorna:
+        {'apartment': ..., 'block': ...} ou None se não encontrado
+    """
+    conn = ODBCConnection()
+    try:
+        conn.connect()
+        cursor = conn.connection.cursor()
+        query = """
+            SELECT u.numero_unidade, b.nome_bloco
+            FROM moradores m
+            JOIN unidades u ON m.id_unidade = u.id_unidade
+            JOIN blocos b ON u.id_bloco = b.id_bloco
+            WHERE m.nome = ?
+        """
+        cursor.execute(query, (name,))
+        row = cursor.fetchone()
+        if row:
+            return {"apartment": row[0], "block": row[1]}
+    except Exception as e:
+        logger.error(f"Erro ao buscar unidade por nome '{name}': {e}")
+    finally:
+        conn.close()
+    return None

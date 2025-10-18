@@ -1,7 +1,7 @@
 from src.condo_package_label import CondoPackageLabel
 from src.utils.logger import get_logger
 from src.utils.normalize import normalize_full
-from src.utils.sanitize import sanitize_full
+from src.utils.sanitize import sanitize_full, sanitize_edges
 from pathlib import Path
 import spacy, re
 
@@ -34,7 +34,9 @@ class Extractor(CondoPackageLabel):
     def extract_recipient_name(self):
         """Extrai candidatos a nomes usando NER. Não valida ou faz fuzzy matching."""
         text_clean = normalize_full(self.text, for_address=False)
+        self.logger.debug(f"extract_recpient_name() -> Pipeline de sanitização concluído: {text_clean}")
         text_clean = sanitize_full(text_clean, remove_acc=False)
+        self.logger.debug(f"extract_recpient_name() -> Pipeline de normalização concluído: {text_clean}")
 
         doc = self.nlp_name(text_clean)
         self.__candidates_name = {ent.text for ent in doc.ents if ent.label_ == "PERSON"}
@@ -44,7 +46,11 @@ class Extractor(CondoPackageLabel):
     def extract_recipient_address(self):
         """Extrai candidatos a endereços usando NER. Não valida ou faz fuzzy matching."""
         text_clean = normalize_full(self.text)
+        self.logger.debug(f"extract_recpient_address() -> Pipeline de normalização full concluído: {text_clean}")
+        text_clean = sanitize_edges(text_clean)         # 2️⃣ Limpa bordas do texto
+        self.logger.debug(f"extract_recpient_address() -> Bordas sanitizadas: {text_clean}")
         text_clean = sanitize_full(text_clean, clear_cep=True)
+        self.logger.debug(f"extract_recpient_address() -> Pipeline de sanitização full concluído: {text_clean}")
 
         doc = self.nlp_address(text_clean)
         candidates = {"STREET": set(), "NUMBER": set(), "COMPLEMENT": set(), "CITY": set(), "STATE": set()}

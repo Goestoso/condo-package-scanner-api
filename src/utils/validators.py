@@ -1,4 +1,4 @@
-from src.db.queries import search_person_like, get_max_name_length, get_all_person_names, get_residents_by_apartment, get_residents_by_block, get_residents_by_unit
+from src.db.queries import search_person_like, get_max_name_length, get_all_person_names, get_residents_by_apartment, get_residents_by_block, get_residents_by_unit, get_unit_info_by_name
 from src.utils.utils import fuzzy_compare
 from src.utils.normalize import normalize_name
 from src.utils.logger import get_logger
@@ -157,3 +157,117 @@ def validate_recipient_name_by_unit(unit_info: dict, name_candidates: set) -> se
 
     logger.info(f"Validação por unidade concluída. Resultados: {validated_names}")
     return validated_names
+
+def validate_recipient_name_by_apartment(apartment: str, name_candidates: set) -> set:
+    """
+    Valida candidatos de nome usando apenas o número do apartamento (sem bloco).
+    Faz fuzzy match entre os candidatos e todos os moradores de qualquer bloco com o mesmo número de unidade.
+    """
+    validated_names = set()
+    if not apartment:
+        logger.warning("Nenhum número de apartamento informado para validação.")
+        return validated_names
+
+    logger.info(f"Buscando moradores de todos os blocos no apartamento {apartment}")
+    residents = get_residents_by_apartment(apartment)
+
+    if not residents:
+        logger.info(f"Nenhum morador encontrado para apartamento {apartment}.")
+        return validated_names
+
+    logger.debug(f"Moradores encontrados (por apartamento): {residents}")
+
+    # --- Fuzzy matching ---
+    for name in name_candidates:
+        matches = fuzzy_compare(candidates=residents, name=name)
+        if not matches:
+            continue
+
+        strong = {normalize_name(match) for match, score, _ in matches if score >= 70}
+        if strong:
+            validated_names.update(strong)
+            logger.info(f"Nome '{name}' validado via fuzzy forte (>=70): {strong}")
+        else:
+            max_score = max(score for _, score, _ in matches)
+            near = {normalize_name(match) for match, score, _ in matches if score == max_score}
+            validated_names.update(near)
+            logger.info(f"Nome '{name}' validado via fuzzy fallback (score {max_score}): {near}")
+
+    logger.info(f"Validação por apartamento concluída. Resultados: {validated_names}")
+    return validated_names
+
+
+def validate_recipient_name_by_block(block: str, name_candidates: set) -> set:
+    """
+    Valida candidatos de nome usando apenas o bloco (sem número de apartamento).
+    Faz fuzzy match entre os candidatos e todos os moradores daquele bloco.
+    """
+    validated_names = set()
+    if not block:
+        logger.warning("Nenhum bloco informado para validação.")
+        return validated_names
+
+    logger.info(f"Buscando moradores do bloco {block}")
+    residents = get_residents_by_block(block)
+
+    if not residents:
+        logger.info(f"Nenhum morador encontrado para bloco {block}.")
+        return validated_names
+
+    logger.debug(f"Moradores encontrados (por bloco): {residents}")
+
+    # --- Fuzzy matching ---
+    for name in name_candidates:
+        matches = fuzzy_compare(candidates=residents, name=name)
+        if not matches:
+            continue
+
+        strong = {normalize_name(match) for match, score, _ in matches if score >= 70}
+        if strong:
+            validated_names.update(strong)
+            logger.info(f"Nome '{name}' validado via fuzzy forte (>=70): {strong}")
+        else:
+            max_score = max(score for _, score, _ in matches)
+            near = {normalize_name(match) for match, score, _ in matches if score == max_score}
+            validated_names.update(near)
+            logger.info(f"Nome '{name}' validado via fuzzy fallback (score {max_score}): {near}")
+
+    logger.info(f"Validação por bloco concluída. Resultados: {validated_names}")
+    return validated_names
+
+def fill_missing_unit_info(name_candidates: set, unit_info: dict) -> dict:
+    """
+    Dado candidatos validados e algum dado de unidade parcial,
+    retorna a unidade completa (apartment + block) baseada no melhor candidato.
+    """
+    apartment = unit_info.get("apartment")
+    block = unit_info.get("block")
+
+    validated_names = set()
+    if apartment and block:
+        validated_names = validate_recipient_name_by_unit(unit_info, name_candidates)
+    elif apartment:
+        validated_names = validate_recipient_name_by_apartment(apartment, name_candidates)
+    elif block:
+        validated_names = validate_recipient_name_by_block(block, name_candidates)
+
+    # --- Pega o melhor nome validado ---
+    if not validated_names:
+        logger.info("Nenhum nome validado para preencher dados de unidade.")
+        return unit_info  # nada encontrado
+
+    best_name = max(validated_names, key=len)  # ou outra heurística de score
+    logger.debug(f"Melhor nome selecionado para completar unidade: '{best_name}'")
+
+    # --- Consulta o banco para preencher dados faltantes ---
+    full_unit = get_unit_info_by_name(best_name)  # retorna dict {'apartment': ..., 'block': ...}
+    if full_unit:
+        if not apartment and full_unit.get("apartment"):
+            unit_info["apartment"] = full_unit["apartment"]
+            logger.info(f"Campo 'apartment' preenchido com '{full_unit['apartment']}' baseado no nome '{best_name}'")
+        if not block and full_unit.get("block"):
+            unit_info["block"] = full_unit["block"]
+            logger.info(f"Campo 'block' preenchido com '{full_unit['block']}' baseado no nome '{best_name}'")
+
+    return unit_info
+

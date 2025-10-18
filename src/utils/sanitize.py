@@ -119,6 +119,57 @@ def remove_codes(text: str, min_len: int = 3) -> str:
     logger.debug(f"remove_codes: '{original}' -> '{text}'")
     return text
 
+def sanitize_edges(text: str, min_len_edge=3) -> str:
+    """
+    Remove lixo do início e fim de um texto OCR, preservando conteúdo relevante no meio.
+    
+    Args:
+        text: string a ser sanitizada.
+        remove_acc: se True, remove acentos.
+        min_len_edge: tamanho mínimo de token aceitável nas bordas.
+    """
+    if not text:
+        return ""
+
+    logger.debug(f"Sanitizando bordas do texto: '{text}'")
+
+    # 1. Substitui caracteres indesejados por espaço
+    text = re.sub(r"[^a-zA-Z0-9á-úÁ-ÚçÇ\s]", " ", text)
+    text = re.sub(r"\s+", " ", text).strip()
+
+    words = text.split()
+
+    # 2. Remove lixo do início
+    while words:
+        w = words[0]
+        if (len(w) < min_len_edge and not re.fullmatch(r'\d+', w)
+                and w.upper() not in STATE_ABBR):
+            logger.debug(f"Removido do início: '{w}'")
+            words.pop(0)
+        else:
+            break
+
+    # 3. Remove lixo do final
+    while words:
+        w = words[-1]
+        if (len(w) < min_len_edge and not re.fullmatch(r'\d+', w)
+                and w.upper() not in STATE_ABBR):
+            logger.debug(f"Removido do final: '{w}'")
+            words.pop(-1)
+        else:
+            break
+
+    text = " ".join(words)
+
+    # 4. Remove links e códigos longos no meio
+    words = text.split()
+    words = remove_links(words)
+    text = " ".join(words)
+    text = remove_alphanum_codes(text)
+
+
+    logger.debug(f"Sanitização de bordas concluída: '{text}'")
+    return text
 
 def sanitize_full(text: str, stop_words=None, min_words=2, for_ner=True, clear_cep=False, remove_acc=True):
     """Executa pipeline completo de sanitização para OCR."""
@@ -151,5 +202,4 @@ def sanitize_full(text: str, stop_words=None, min_words=2, for_ner=True, clear_c
         logger.debug(f"Pipeline de sanitização resultou em texto vazio ou pequeno: '{text}'")
         return ""
 
-    logger.debug(f"Pipeline de sanitização concluído: '{text}'")
     return text

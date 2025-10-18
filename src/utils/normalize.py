@@ -30,15 +30,40 @@ def normalize_name(name: str) -> str:
     return name_clean
 
 def normalize_address_complement(text: str) -> str:
-    """Substitui abreviações de complementos por palavras completas."""
-    COMPLEMENTS = config_loader.load_normalize_config()[0]  # só os complements
+    complements, _ = config_loader.load_normalize_config()
     words = text.split()
+    threshold = 80
+
+    # Cria set de abreviações curtas (match exato)
+    short_abbr = {abbr for variants in complements.values() for abbr in variants if len(abbr) <= 2}
+
     for i, w in enumerate(words):
-        key = w.lower().rstrip(".")
-        if key in COMPLEMENTS:
-            logger.debug(f"Substituindo complemento '{w}' por '{COMPLEMENTS[key]}'")
-            words[i] = COMPLEMENTS[key]
+        key = w.lower().rstrip(".,;")
+        best_match = None
+        best_score = 0
+
+        for full_form, variants in complements.items():
+            # --- 1. Match exato ---
+            if key in variants:
+                best_match = full_form
+                best_score = 100
+                break
+
+            # --- 2. Fuzzy só para tokens >= 3 caracteres ---
+            if len(key) >= 3:
+                for v in variants:
+                    score = fuzz.partial_ratio(key, v)
+                    if score > best_score:
+                        best_score = score
+                        best_match = full_form
+
+        # --- 3. Substituição ---
+        if best_match and best_score >= threshold:
+            logger.debug(f"Normalizando '{w}' → '{best_match}' (score={best_score})")
+            words[i] = best_match
+
     return " ".join(words)
+
 
 def normalize_block(block: str | None) -> str | None:
     """
@@ -178,5 +203,4 @@ def normalize_full(text: str, for_address=True) -> str:
     text = normalize_ceps(text)
     text = normalize_case(text)
     text = normalize_numbers(text)
-    logger.debug(f"Pipeline de normalização concluído: '{text}'")
     return text

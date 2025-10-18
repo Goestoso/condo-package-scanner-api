@@ -1,10 +1,9 @@
 {
     "complements": {
-        "ap": "apartamento",
-        "apt": "apartamento",
-        "bl": "bloco",
-        "cj": "conjunto",
-        "cond": "condominio"
+        "apartamento": ["ap", "apt", "apart", "apartam", "apartamento", "partamento"],
+        "bloco": ["bl", "blc", "blco", "bloco", "boco"],
+        "conjunto": ["cj", "conj", "conjunto"],
+        "condominio": ["cond", "condm", "condom", "condominio", "condomínio"]
     },
 
     "prefixes": {
