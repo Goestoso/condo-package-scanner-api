@@ -64,11 +64,11 @@ class Extractor(CondoPackageLabel):
         self.__candidates_address = candidates
         self.logger.debug(f"Candidatos a endereços extraídos: {self.candidates_address}")
 
-    def extract_apartment_and_block(self) -> dict | None:
+    def extract_apartment_and_block(self) -> dict:
         """
         Extrai número de apartamento e bloco a partir dos candidatos de endereço.
         Busca em todos os labels extraídos.
-        Retorna dict com as chaves 'apartment' e/ou 'block', ou None se nada for encontrado.
+        Retorna dict com as chaves 'apartment' e 'block' (podem estar vazias).
         """
         apartment = None
         block = None
@@ -93,12 +93,13 @@ class Extractor(CondoPackageLabel):
                 if apartment and block:
                     break
 
+        result = {"apartment": apartment, "block": block}
+
         if not apartment and not block:
             self.logger.info("Nenhum bloco ou apartamento identificado no endereço extraído.")
-            return None
+        else:
+            self.logger.info(f"Unidade identificada: {result}")
 
-        result = {"apartment": apartment, "block": block}
-        self.logger.info(f"Unidade identificada: {result}")
         return result
 
     def __str__(self):

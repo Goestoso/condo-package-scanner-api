@@ -38,28 +38,48 @@ def main(image_path: str):
     logger.debug(f"Endereço extraído: {address}")
 
     # --- 5. Extrai ap/bloco ---
-    unit_info = extractor.extract_apartment_and_block()
+    unit_info = extractor.extract_apartment_and_block() or {"apartment": None, "block": None}
     unit_info['block'] = normalize_block(unit_info['block'])
 
-    # --- 6. Escolhe o tipo de validação ---
+    # --- 6. Valida nomes ---
     if unit_info.get('apartment') and unit_info.get('block'):
         validated_names = validate_recipient_name_by_unit(unit_info, sanitized_candidates)
+        names_with_units = {name: unit_info for name in validated_names}
     elif unit_info.get('apartment'):
         validated_names = validate_recipient_name_by_apartment(unit_info['apartment'], sanitized_candidates)
+        names_with_units = {name: {"apartment": unit_info['apartment'], "block": None} for name in validated_names}
     elif unit_info.get('block'):
         validated_names = validate_recipient_name_by_block(unit_info['block'], sanitized_candidates)
+        names_with_units = {name: {"apartment": None, "block": unit_info['block']} for name in validated_names}
     else:
-        validated_names = validate_recipient_name_candidates(sanitized_candidates)
+        # nova função retorna: (nomes validados, dict de nome -> unidade)
+        validated_names, names_with_units = validate_recipient_name_candidates(sanitized_candidates)
 
-    # --- 7. Preenche dados faltantes de unidade com base nos nomes validados ---
-    if validated_names:
-        unit_info = fill_missing_unit_info(validated_names, unit_info)
+    # --- 7. Preenche dados faltantes de unidade ---
+    if len(validated_names) == 1:
+        # apenas um candidato, preenche unit_info diretamente
+        single_name = next(iter(validated_names))
+        unit_info = fill_missing_unit_info(single_name, names_with_units[single_name])
+    else:
+        # vários candidatos, garante que cada um tenha unidade
+        for name in validated_names:
+            names_with_units[name] = fill_missing_unit_info(name, names_with_units[name])
 
     # --- 8. Resultado final ---
     result = {
-        "names": list(validated_names),
-        "unit_info": unit_info
+        "names": list(validated_names)
     }
+
+    if len(validated_names) > 1:
+        # múltiplos nomes → names_with_units
+        for name in validated_names:
+            names_with_units[name] = fill_missing_unit_info(name, names_with_units.get(name, {}))
+        result["names_with_units"] = names_with_units
+    else:
+        # 1 nome → unit_info
+        single_name = next(iter(validated_names))
+        unit_info = fill_missing_unit_info(single_name, unit_info)
+        result["unit_info"] = unit_info
 
     logger.info(f"Extração completa: {result}")
     return result

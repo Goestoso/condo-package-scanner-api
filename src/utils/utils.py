@@ -40,5 +40,8 @@ def fuzzy_compare(candidates:list, name: str, threshold: int = 70) -> list[tuple
         scorer=fuzz.token_set_ratio,
         score_cutoff=threshold
     )
+
+    logger.debug(f"Tipo de matches recebido: {type(matches)}, exemplo: {matches[:3] if matches else 'vazio'}")
+
     logger.debug(f"Matches fuzzy retornados para '{name}': {matches}")
     return matches  # [(nome, score), ...]
