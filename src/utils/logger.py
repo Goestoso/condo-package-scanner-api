@@ -7,7 +7,7 @@ CONFIG_FILE = Path(__file__).parent.parent.parent / "configs" / "logger.yml"
 
 # Valores padrão seguros
 DEFAULT_CONFIG = {
-    "log_file": "logs/order_scanner.log",
+    "log_file": "logs/condo_package_scanner_api.log",
     "log_level": "DEBUG",
     "console_level": "INFO",
     "max_bytes": 5 * 1024 * 1024,
