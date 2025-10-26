@@ -67,6 +67,35 @@ tesseract --version
 tesseract imagem.jpg saida.txt -l por
 ```
 
+7. Configure a conexão com o banco de dados (no caso atual é o SQL Azure Server):
+
+- Crie um arquivo chamado `db_connection.yml` dentro do diretório `configs/` e preencha-o com os dados abaixo (substitua os valores de exemplo pelos os valores reais de conexão do banco de dados):
+```
+# configs/db_connection.example.yml
+server: condominio-server.database.windows.net
+database: db-condominios-encomendas
+username: admincondominio
+password: sua_senha_aqui
+driver: "{ODBC Driver 18 for SQL Server}"
+encrypt: yes
+trust_server_certificate: no
+connection_timeout: 30
+```
+
+> 💡 Um arquivo `/configs/db_connection.example.yml` foi adicionado no projeto para auxiliar nessa etapa.
+
+- Instale o driver ODBC para SQL Server caso não tenha instalado:
+    - [Windows](https://learn.microsoft.com/pt-br/sql/connect/odbc/download-odbc-driver-for-sql-server?view=sql-server-ver18)
+    - [Linux (Unbutu/Debian)](https://learn.microsoft.com/pt-br/sql/connect/odbc/linux-mac/installing-the-microsoft-odbc-driver-for-sql-server?view=sql-server-ver17&tabs=alpine18-install%2Calpine17-install%2Cdebian8-install%2Credhat7-13-install%2Crhel7-offline):
+    - [macOS](https://learn.microsoft.com/pt-br/sql/connect/odbc/linux-mac/install-microsoft-odbc-driver-sql-server-macos?view=sql-server-ver17)
+
+- Para verificar se os valores do arquivo de conexão com o banco de dados estão certos, rode o comando abaixo (substitua os valores de exemplo do comando pelo os do arquivo de conexão):
+```
+sqlcmd -S condominio-server.database.windows.net -d db-condominios-encomendas -U admincondominio -P sua_senha_aqui -N -l 30
+```
+- Se a conexão for bem-sucedida, você verá um prompt `1>` aguardando comandos SQL.
+
+
 ## Estrutura do projeto
 ```
 condo-package-scanner-api/
@@ -271,3 +300,64 @@ O projeto utiliza logging para monitoramento do pipeline, debug e rastreamento d
 - Mantenha `DEBUG` durante testes e ajustes de modelos."
 - Em produção, utilize `INFO` ou `WARNING` para reduzir mensagens.
 - Logs ajudam a identificar problemas no OCR, NER ou fuzzy match.
+
+## Como Executar
+
+> 💡 Antes de iniciar a execução da aplicação, siga as instruções de instalação mencionadas anteriormente.
+
+Para executar a aplicação:
+
+1. Adicione a imagem (preferencialmente no formato `.jpg`) de etiqueta de encomenda de condomínio (foque nos dados do morador para facilitar o processo) dentro do diretório `assets/`.
+2. No código do ponto de entrada da aplicação, chamado `CondoPackageScannerAPI.py`, insira o nome do arquivo da imagem no trecho sinalizado abaixo:
+```
+if __name__ == '__main__':
+
+    main("imagem_etiqueta.jpg") # <----- Insira o nome do arquivo da imagem no argumento da função main()
+```
+3. Execute o programa `CondoPackageScannerAPI.py` usando o _python_ via terminal:
+```
+python CondoPackageScannerAPI.py
+```
+
+4. Durante e após a execução do programa, algumas informações irão aparecer no console e no arquivo `.log`, conforme a configuração do arquivo `configs/logger_config.yml`, por exemplo:
+```
+2025-10-26 00:44:18 | src.main | INFO | Iniciando extração da imagem: correios.jpg
+2025-10-26 00:44:18 | Extractor | INFO | Sticker criado para a imagem: /home/patton/Documents/tg/condo-package-scanner-api/assets/correios.jpg
+2025-10-26 00:44:18 | Extractor | INFO | Carregando modelos NER...
+2025-10-26 00:44:18 | Extractor | INFO | Modelos carregados com sucesso.
+2025-10-26 00:44:18 | Extractor | INFO | OCR concluído. Texto extraído com 283 caracteres
+2025-10-26 00:44:18 | src.main | INFO | OCR concluído.
+2025-10-26 00:44:18 | Extractor | INFO | Candidatos a nomes extraídos: ['João Dias']
+2025-10-26 00:44:18 | Extractor | INFO | Candidatos a endereços extraídos: {'STREET': ['Rua Jonas Fonseca'], 'NUMBER': ['01000', '1 m 112233', '250', 'Volume 1'], 'COMPLEMENT': ['Condominio Azul Apartamento Sao Goncalo'], 'CITY': ['Ii Condominio Nome Legivel Destinatario', 'Joao Dias', 'Pedido', 'Remotento Sigep Web Ambiente Homologacao'], 'STATE': []}
+2025-10-26 00:44:18 | Extractor | INFO | Nenhum bloco ou apartamento identificado no endereço extraído.
+2025-10-26 00:44:18 | src.db.odbc_api | INFO | Arquivo de configuração do banco carregado com sucesso.
+2025-10-26 00:44:24 | src.db.odbc_api | INFO | Conexão com o banco de dados 'db-condominios-encomendas' no servidor 'condominio-server.database.windows.net' estabelecida com sucesso.
+2025-10-26 00:44:24 | src.db.odbc_api | INFO | Conexão com o banco de dados encerrada com sucesso.
+2025-10-26 00:44:24 | src.db.odbc_api | INFO | Arquivo de configuração do banco carregado com sucesso.
+2025-10-26 00:44:24 | src.db.odbc_api | INFO | Conexão com o banco de dados 'db-condominios-encomendas' no servidor 'condominio-server.database.windows.net' estabelecida com sucesso.
+2025-10-26 00:44:24 | src.db.odbc_api | INFO | Conexão com o banco de dados encerrada com sucesso.
+2025-10-26 00:44:24 | src.db.odbc_api | INFO | Arquivo de configuração do banco carregado com sucesso.
+2025-10-26 00:44:24 | src.db.odbc_api | INFO | Conexão com o banco de dados 'db-condominios-encomendas' no servidor 'condominio-server.database.windows.net' estabelecida com sucesso.
+2025-10-26 00:44:24 | src.db.odbc_api | INFO | Conexão com o banco de dados encerrada com sucesso.
+2025-10-26 00:44:24 | src.utils.validators | INFO | Nome 'João Dias' validado via LIKE único: Joao Dias
+2025-10-26 00:44:24 | src.utils.validators | INFO | Buscando moradores do apartamento 672, bloco F
+2025-10-26 00:44:24 | src.db.odbc_api | INFO | Arquivo de configuração do banco carregado com sucesso.
+2025-10-26 00:44:24 | src.db.odbc_api | INFO | Conexão com o banco de dados 'db-condominios-encomendas' no servidor 'condominio-server.database.windows.net' estabelecida com sucesso.
+2025-10-26 00:44:24 | src.db.odbc_api | INFO | Conexão com o banco de dados encerrada com sucesso.
+2025-10-26 00:44:24 | src.utils.validators | INFO | Nome 'Joao Dias' validado via fuzzy forte (>=70): {'Joao Dias'}
+2025-10-26 00:44:24 | src.utils.validators | INFO | Validação por unidade concluída. Resultados: {'Joao Dias'}
+2025-10-26 00:44:24 | src.db.odbc_api | INFO | Arquivo de configuração do banco carregado com sucesso.
+2025-10-26 00:44:24 | src.db.odbc_api | INFO | Conexão com o banco de dados 'db-condominios-encomendas' no servidor 'condominio-server.database.windows.net' estabelecida com sucesso.
+2025-10-26 00:44:24 | src.db.odbc_api | INFO | Conexão com o banco de dados encerrada com sucesso.
+2025-10-26 00:44:24 | src.utils.validators | INFO | Buscando moradores do apartamento 672, bloco F
+2025-10-26 00:44:24 | src.db.odbc_api | INFO | Arquivo de configuração do banco carregado com sucesso.
+2025-10-26 00:44:24 | src.db.odbc_api | INFO | Conexão com o banco de dados 'db-condominios-encomendas' no servidor 'condominio-server.database.windows.net' estabelecida com sucesso.
+2025-10-26 00:44:24 | src.db.odbc_api | INFO | Conexão com o banco de dados encerrada com sucesso.
+2025-10-26 00:44:24 | src.utils.validators | INFO | Nome 'Joao Dias' validado via fuzzy forte (>=70): {'Joao Dias'}
+2025-10-26 00:44:24 | src.utils.validators | INFO | Validação por unidade concluída. Resultados: {'Joao Dias'}
+2025-10-26 00:44:24 | src.db.odbc_api | INFO | Arquivo de configuração do banco carregado com sucesso.
+2025-10-26 00:44:24 | src.db.odbc_api | INFO | Conexão com o banco de dados 'db-condominios-encomendas' no servidor 'condominio-server.database.windows.net' estabelecida com sucesso.
+2025-10-26 00:44:24 | src.db.odbc_api | INFO | Conexão com o banco de dados encerrada com sucesso.
+2025-10-26 00:44:24 | src.main | INFO | Extração completa: {'names': ['Joao Dias'], 'unit_info': {'apartment': '672', 'block': 'F'}}
+```
+
