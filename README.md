@@ -1,24 +1,27 @@
 # Order Scanner API
-API para extração de dados de moradores a partir de etiquetas de encomendas em condomínios, com validação automática contra o banco de dados de moradores.
+API (Interface de Programação de Aplicativos, ou, em inglês, _Application Programming Interface_) para extração de dados de moradores a partir de etiquetas de encomendas em condomínios, com validação automática contra o banco de dados de moradores.
 
 ## Descrição
 Este projeto consiste em uma API que extrai informações de moradores (nome, endereço e complemento) a partir de imagens de etiquetas de encomendas. O pipeline realiza:
 
-- OCR do texto da etiqueta (Tesseract)
+- OCR do texto da etiqueta (**Tesseract**)
 
-- Detecção de entidades (NER spaCy) para nomes e endereços
+- Detecção de entidades (NER **spaCy**) para nomes e endereços
 
 - Sanitização e normalização de candidatos (remoção de stop tokens, números, romanos e abreviações de endereço)
 
-- Validação de nomes e endereços com fuzzy matching usando dados reais do banco
+- Validação de nomes e endereços com _fuzzy matching_ usando dados reais do banco
 
 - Validação opcional por unidade (apartamento/bloco) para filtrar resultados irrelevantes
 
 ## Tecnologias
 - Python 3.13
-- [Tesseract OCR](https://github.com/tesseract-ocr/tesseract)
-- [spaCy](https://spacy.io) para NER
+- [Tesseract OCR](https://github.com/tesseract-ocr/tesseract), como o próprio nome já indica (Reconhecimento Óptico de Caracteres, ou, em inglês, _Optical Character Recognition_), fará o reconhecimento óptico de caracteres (extração de texto contido especialmente em arquivos que são baseados em imagem, como `pdf`, `jpg`, `png`, etc)
+- [spaCy](https://spacy.io), usará inteligência artificial para NER (Reconhecimento de Entidade Nomeada, ou, em inglês, _Named Entity Recognition_)
 - [rapidfuzz](https://rapidfuzz.github.io/RapidFuzz) para fuzzy matching e normalização
+- [FastAPI](https://fastapi.tiangolo.com) para construir a API do projeto
+- [Uvicorn](https://uvicorn.dev), servidor ASGI (Interface de Gateway de Servidor Assíncrono, ou, em inglês, _Asynchronous Server Gateway Interface_) que executará a aplicação **FastAPI**
+- [SQL Azure Database](https://learn.microsoft.com/pt-br/azure/azure-sql/database/sql-database-paas-overview?view=azuresql) é o serviço de banco de dados totalmente gerenciado, oferecido pela **Microsoft**, que armazenará as informações dos moradores e de suas respectivas encomendas
 - Logging integrado para debug e rastreamento
 
 ## Instalação 
@@ -49,14 +52,15 @@ pip install -r requirements.txt
 sudo apt install tesseract-ocr
 ```
 
-5. Configure o idioma `pt-br` no Tesseract OCR:
-- Windows: Durante a instalação, selecione o idioma `Portuguese` (ou baixe o pacote de idiomas separado, se necessário).
+5. Configure o idioma `pt-br` no **Tesseract OCR**:
+- Windows:
+    - Durante a instalação, selecione o idioma `Portuguese` (ou baixe o pacote de idiomas separado, se necessário).
 - Linux Unbutu/Debian:
 ```
 sudo apt install tesseract-ocr-por
 ```
 
-6. Testando a instalação do Tesseract OCR:
+6. Testando a instalação do **Tesseract OCR**:
 
 - No terminal, execute:
 ```
@@ -67,9 +71,9 @@ tesseract --version
 tesseract imagem.jpg saida.txt -l por
 ```
 
-7. Configure a conexão com o banco de dados (no caso atual é o SQL Azure Server):
+7. Configure a conexão com o banco de dados (no caso atual é o **SQL Azure Database**):
 
-- Crie um arquivo chamado `db_connection.yml` dentro do diretório `configs/` e preencha-o com os dados abaixo (substitua os valores de exemplo pelos os valores reais de conexão do banco de dados):
+- Crie um arquivo chamado `db_connection.yml` dentro do diretório `configs/` e preencha-o com os dados abaixo (substitua os valores de exemplo pelos valores reais de conexão do seu banco de dados):
 ```
 # configs/db_connection.example.yml
 server: condominio-server.database.windows.net
@@ -84,12 +88,12 @@ connection_timeout: 30
 
 > 💡 Um arquivo `/configs/db_connection.example.yml` foi adicionado no projeto para auxiliar nessa etapa.
 
-- Instale o driver ODBC para SQL Server caso não tenha instalado:
+- Instale o driver ODBC para SQL Server (caso não tenha instalado):
     - [Windows](https://learn.microsoft.com/pt-br/sql/connect/odbc/download-odbc-driver-for-sql-server?view=sql-server-ver18)
     - [Linux (Unbutu/Debian)](https://learn.microsoft.com/pt-br/sql/connect/odbc/linux-mac/installing-the-microsoft-odbc-driver-for-sql-server?view=sql-server-ver17&tabs=alpine18-install%2Calpine17-install%2Cdebian8-install%2Credhat7-13-install%2Crhel7-offline):
     - [macOS](https://learn.microsoft.com/pt-br/sql/connect/odbc/linux-mac/install-microsoft-odbc-driver-sql-server-macos?view=sql-server-ver17)
 
-- Para verificar se os valores do arquivo de conexão com o banco de dados estão certos, rode o comando abaixo (substitua os valores de exemplo do comando pelo os do arquivo de conexão):
+- Para verificar se os valores do arquivo de conexão com o seu banco de dados estão certos, rode o comando abaixo (substitua os valores de exemplo do comando pelo os do arquivo de conexão):
 ```
 sqlcmd -S condominio-server.database.windows.net -d db-condominios-encomendas -U admincondominio -P sua_senha_aqui -N -l 30
 ```
@@ -101,13 +105,14 @@ sqlcmd -S condominio-server.database.windows.net -d db-condominios-encomendas -U
 condo-package-scanner-api/
 │
 ├─ assets/               # Imagens para teste
-├─ configs/              # Configurações (normalização, logger, sanitização)
-├─ data/                 # Datasets auxiliares
+├─ configs/              # Configurações (normalização, logger, conexão com o banco)
+├─ data/                 # Datasets auxiliares e stop words\tokens para sanitização
 ├─ models/               # Modelos NER treinados
 ├─ scripts/              # Scripts para atualização de datasets e modelos
 ├─ src/                  # Código-fonte principal
 ├─ tests/                # Testes unitários e integração
-└─ CondoPackageScannerAPI     # Executável da API
+├─ api.py                # Onde está definido a aplicação FastAPI que rodará pelo servidor Uvicorn
+└─ CondoPackageScanner.py     # Executável
 ```
 
 ## Treinamentos de modelos NER
@@ -192,7 +197,7 @@ O pipeline de extração de dados funciona da seguinte forma:
 
 1. **OCR com Tesseract**
 
-- O texto é extraído da imagem da etiqueta usando o Tesseract OCR (`pytesseract`).
+- O texto é extraído da imagem da etiqueta usando o **Tesseract OCR** (`pytesseract`).
 
 - Resultado: texto bruto contendo informações do destinatário.
 
@@ -202,7 +207,7 @@ O pipeline de extração de dados funciona da seguinte forma:
 
 - Padroniza maiúsculas/minúsculas, estados, CEPs, números (inclui romanos também) e complementos.
 
-- Resultado: texto consistente e padronizado, pronto para NER.
+- Resultado: texto consistente e padronizado, pronto para **NER**.
 
 3. **Pipeline de Sanitização do Texto**
 
@@ -275,16 +280,6 @@ O projeto utiliza logging para monitoramento do pipeline, debug e rastreamento d
 
 - Configuração padrão grava logs no console, podendo ser ajustada para arquivos em `configs/logger_config.yml`.
 
-**Uso nos módulos**
-
-- **Sticker**: logs sobre extração de texto OCR (`DEBUG` / `INFO`).
-
-- **Extractor**: logs detalhados sobre:
-      - Normalização e sanitização
-      - Entidades detectadas pelo NER
-      - Resultados do fuzzy match e fallback
-      - Definição final de recipient_name e recipient_address
-
 **Exemplo de saída**
 ```
 [INFO] OCR concluído: texto extraído da etiqueta
@@ -303,11 +298,13 @@ O projeto utiliza logging para monitoramento do pipeline, debug e rastreamento d
 
 ## Como Executar
 
-> 💡 Antes de iniciar a execução da aplicação, siga as instruções de instalação mencionadas anteriormente.
+> 💡 Antes de iniciar a execução, siga as instruções de instalação mencionadas anteriormente.
+
+### Usando `CondoPackageScanner.py` (▶️ Executável)
 
 Para executar a aplicação:
 
-1. Adicione a imagem (preferencialmente no formato `.jpg`) de etiqueta de encomenda de condomínio (foque nos dados do morador para facilitar o processo) dentro do diretório `assets/`.
+1. Adicione a imagem de etiqueta de encomenda de condomínio (foque nos dados do morador para facilitar o processo) dentro do diretório `assets/`.
 2. No código do ponto de entrada da aplicação, chamado `CondoPackageScannerAPI.py`, insira o nome do arquivo da imagem no trecho sinalizado abaixo:
 ```
 if __name__ == '__main__':
@@ -360,4 +357,31 @@ python CondoPackageScannerAPI.py
 2025-10-26 00:44:24 | src.db.odbc_api | INFO | Conexão com o banco de dados encerrada com sucesso.
 2025-10-26 00:44:24 | src.main | INFO | Extração completa: {'names': ['Joao Dias'], 'unit_info': {'apartment': '672', 'block': 'F'}}
 ```
+
+### Usando `api.py` (🌐 Servidor)
+
+- Para iniciar o servidor, rode o comando (no diretório do projeto) via terminal:
+```
+uvicorn api:app --reload
+```
+> Isso irá executar o programa `api.py` (onde está definida a aplicação **FastAPI**) usando o servidor **Uvicorn**.
+
+- Para parar o servidor:
+    - Pressione as teclas `Ctrl` + `C`
+
+ - Os retornos seguirão o seguinte padrão:
+```
+{
+  "status": "success",
+  "data": {
+    "names": ["Nome do morador"],
+    "unit_info": {
+      "apartment": "16",
+      "block": "A"
+    }
+  }
+}
+```
+
+> Poderá haver casos em que o `extractor` irá retornar com status de erro (indicando erro na comunicação com o servidor), com erros da aplicação (uma chave `"error"` com a mensagem de erro) e com mais de um candidato a morador da etiqueta (uma lista com os nomes na chave `"names"` e uma chave `"names_with_uinits"` com o dicionário de nomes associados às unidades residenciais de cada possível candidato).
 

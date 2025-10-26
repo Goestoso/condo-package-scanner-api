@@ -6,6 +6,7 @@ Módulo principal que centraliza a lógica do programa:
 4. Extrai endereço (pode ter lógica similar)
 """
 
+from pathlib import Path
 from src.extractor import Extractor
 from src.utils.validators import (
     validate_recipient_name_candidates,
@@ -17,15 +18,26 @@ from src.utils.validators import (
 from src.utils.normalize import normalize_block
 from src.utils.sanitize import sanitize_name_cand
 from src.utils.logger import get_logger
+from io import BytesIO
+from PIL import Image
+
 
 logger = get_logger(__name__)
 
-def main(image_path: str):
+def main(image_input):
+    """
+    Processa uma imagem (caminho ou bytes) e retorna o resultado da extração.
+    """
     try:
-        logger.info(f"Iniciando extração da imagem: {image_path}")
-
-        # --- 1. Instancia o extractor ---
-        extractor = Extractor(image_path)
+        # --- 1. Instancia o Extractor ---
+        if isinstance(image_input, (str, Path)):
+            logger.info(f"Iniciando extração da imagem: {image_input}")
+            extractor = Extractor(image_input)
+        elif isinstance(image_input, (bytes, BytesIO)):
+            logger.info("Iniciando extração da imagem (em memória).")
+            extractor = Extractor(image_input, in_memory=True)
+        else:
+            raise TypeError("Parâmetro inválido: esperado caminho (str) ou bytes de imagem.")
 
         # --- 2. OCR ---
         extractor.extract_text()
@@ -103,7 +115,7 @@ def main(image_path: str):
 
     except Exception as e:
         # --- Captura e loga qualquer erro inesperado ---
-        logger.exception(f"Erro inesperado durante a execução do main() para imagem '{image_path}': {e}")
+        logger.exception(f"Erro inesperado durante a execução do main(): {e}")
         # Retorna um resultado padrão de erro
         return {
             "names": [],
