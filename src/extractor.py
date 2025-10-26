@@ -19,8 +19,8 @@ class Extractor(CondoPackageLabel):
     def candidates_address(self):
         return {k: sorted(v) for k, v in self.__candidates_address.items()}
 
-    def __init__(self, img: str):
-        super().__init__(img)
+    def __init__(self, img: str, in_memory: bool = False):
+        super().__init__(img, in_memory=in_memory)
         self.logger = get_logger(self.__class__.__name__)
         
         self.__candidates_name = set()
@@ -30,6 +30,7 @@ class Extractor(CondoPackageLabel):
         self.nlp_name = spacy.load(self.__MODEL_NAME_PATH)
         self.nlp_address = spacy.load(self.__MODEL_ADDRESS_PATH)
         self.logger.info("Modelos carregados com sucesso.")
+
 
     def extract_recipient_name(self):
         """Extrai candidatos a nomes usando NER. Não valida ou faz fuzzy matching."""
