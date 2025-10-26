@@ -41,7 +41,7 @@ class Extractor(CondoPackageLabel):
         doc = self.nlp_name(text_clean)
         self.__candidates_name = {ent.text for ent in doc.ents if ent.label_ == "PERSON"}
 
-        self.logger.debug(f"Candidatos a nomes extraídos: {self.candidates_name}")
+        self.logger.info(f"Candidatos a nomes extraídos: {self.candidates_name}")
 
     def extract_recipient_address(self):
         """Extrai candidatos a endereços usando NER. Não valida ou faz fuzzy matching."""
@@ -62,7 +62,7 @@ class Extractor(CondoPackageLabel):
                     candidates[ent.label_].add(cleaned)
 
         self.__candidates_address = candidates
-        self.logger.debug(f"Candidatos a endereços extraídos: {self.candidates_address}")
+        self.logger.info(f"Candidatos a endereços extraídos: {self.candidates_address}")
 
     def extract_apartment_and_block(self) -> dict:
         """
