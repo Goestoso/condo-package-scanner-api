@@ -22,6 +22,7 @@ Este projeto consiste em uma API que extrai informações de moradores (nome, en
 - [FastAPI](https://fastapi.tiangolo.com) para construir a API do projeto
 - [Uvicorn](https://uvicorn.dev), servidor ASGI (Interface de Gateway de Servidor Assíncrono, ou, em inglês, _Asynchronous Server Gateway Interface_) que executará a aplicação **FastAPI**
 - [SQL Azure Database](https://learn.microsoft.com/pt-br/azure/azure-sql/database/sql-database-paas-overview?view=azuresql) é o serviço de banco de dados totalmente gerenciado, oferecido pela **Microsoft**, que armazenará as informações dos moradores e de suas respectivas encomendas
+- [MySQL Database](https://www.mysql.com/about) é um sistema de gerenciamento de banco de dados relacional (RDBMS) de código aberto, que também pode ser usado para armazenar as dos moradores e de suas respectivas encomendas
 - Logging integrado para debug e rastreamento
 
 ## Instalação 
@@ -71,14 +72,17 @@ tesseract --version
 tesseract imagem.jpg saida.txt -l por
 ```
 
-7. Configure a conexão com o banco de dados (no caso atual é o **SQL Azure Database**):
+7. Configure a conexão com o banco de dados:
 
-- Crie um arquivo chamado `db_connection.yml` dentro do diretório `configs/` e preencha-o com os dados abaixo (substitua os valores de exemplo pelos valores reais de conexão do seu banco de dados):
+- Crie um arquivo chamado `db_connection.yml` dentro do diretório `configs/` e preencha-o com os dados seguindo a estrtura do banco a ser usado:
+
+> **SQL Azure Database**:
+
 ```
 # configs/db_connection.example.yml
 server: condominio-server.database.windows.net
 database: db-condominios-encomendas
-username: admincondominio
+username: seu_usuario
 password: sua_senha_aqui
 driver: "{ODBC Driver 18 for SQL Server}"
 encrypt: yes
@@ -86,9 +90,7 @@ trust_server_certificate: no
 connection_timeout: 30
 ```
 
-> 💡 Um arquivo `/configs/db_connection.example.yml` foi adicionado no projeto para auxiliar nessa etapa.
-
-- Instale o driver ODBC para SQL Server (caso não tenha instalado):
+- Também instale o driver ODBC para SQL Server (caso não tenha instalado):
     - [Windows](https://learn.microsoft.com/pt-br/sql/connect/odbc/download-odbc-driver-for-sql-server?view=sql-server-ver18)
     - [Linux (Unbutu/Debian)](https://learn.microsoft.com/pt-br/sql/connect/odbc/linux-mac/installing-the-microsoft-odbc-driver-for-sql-server?view=sql-server-ver17&tabs=alpine18-install%2Calpine17-install%2Cdebian8-install%2Credhat7-13-install%2Crhel7-offline):
     - [macOS](https://learn.microsoft.com/pt-br/sql/connect/odbc/linux-mac/install-microsoft-odbc-driver-sql-server-macos?view=sql-server-ver17)
@@ -98,6 +100,19 @@ connection_timeout: 30
 sqlcmd -S condominio-server.database.windows.net -d db-condominios-encomendas -U admincondominio -P sua_senha_aqui -N -l 30
 ```
 - Se a conexão for bem-sucedida, você verá um prompt `1>` aguardando comandos SQL.
+
+> **MySQL Database**:
+
+```
+# host: shortline.proxy.rlwy.net
+# port: 20562
+# database: db_condominios_encomendas
+# username: seu_usuario
+# password: sua_senha_aqui
+# connection_timeout: 30
+```
+
+> 💡 Um arquivo `/configs/db_connection.example.yml` foi adicionado no projeto para auxiliar nessa etapa (substitua os valores dos exemplos pelos valores reais de conexão do seu banco de dados).
 
 
 ## Estrutura do projeto
