@@ -1,7 +1,16 @@
-from src.db.odbc_api import ODBCConnection
+from src.db.factory import get_db_connection
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
+
+def _get_placeholder(conn) -> str:
+    """
+    Retorna o placeholder correto para parâmetros de query.
+    - SQL Server (pyodbc): usa '?'
+    - MySQL (mysql.connector): usa '%s'
+    """
+    return "?" if conn.__class__.__name__ == "SQLServerConnection" else "%s"
+
 
 def search_person_like(name_candidate: str) -> list[str]:
     """
@@ -14,23 +23,23 @@ def search_person_like(name_candidate: str) -> list[str]:
         Lista de nomes completos encontrados.
     """
     results = []
-    conn = ODBCConnection()
+    conn = get_db_connection()
     try:
         conn.connect()
         cursor = conn.connection.cursor()
+        placeholder = _get_placeholder(conn)
         like_pattern = f"%{name_candidate}%"
 
-        query = "SELECT nome FROM moradores WHERE nome LIKE ?"
+        query = f"SELECT nome FROM moradores WHERE nome LIKE {placeholder}"
         cursor.execute(query, (like_pattern,))
         rows = cursor.fetchall()
         results = [row[0] for row in rows]
 
-        logger.debug(f"search_person_like('{name_candidate}') retornou {len(results)} resultados: {results}")
+        logger.debug(f"search_person_like('{name_candidate}') -> {results}")
     except Exception as e:
         logger.error(f"Erro ao executar search_person_like('{name_candidate}'): {e}")
     finally:
         conn.close()
-
     return results
 
 
@@ -39,11 +48,15 @@ def get_max_name_length() -> int:
     Retorna o comprimento máximo do campo nome na tabela 'moradores'.
     """
     max_len = 0
-    conn = ODBCConnection()
+    conn = get_db_connection()
     try:
         conn.connect()
         cursor = conn.connection.cursor()
-        cursor.execute("SELECT MAX(LEN(nome)) FROM moradores")
+
+        # Função LEN() para SQL Server / LENGTH() para MySQL
+        func = "LEN" if conn.__class__.__name__ == "SQLServerConnection" else "LENGTH"
+        cursor.execute(f"SELECT MAX({func}(nome)) FROM moradores")
+
         row = cursor.fetchone()
         if row and row[0]:
             max_len = row[0]
@@ -60,13 +73,13 @@ def get_all_person_names() -> list[str]:
     Retorna todos os nomes da tabela 'moradores'.
     """
     names = []
-    conn = ODBCConnection()
+    conn = get_db_connection()
     try:
         conn.connect()
         cursor = conn.connection.cursor()
         cursor.execute("SELECT nome FROM moradores")
         names = [row[0] for row in cursor.fetchall()]
-        logger.debug(f"get_all_person_names() retornou {len(names)} nomes")
+        logger.debug(f"get_all_person_names() -> {len(names)} nomes")
     except Exception as e:
         logger.error(f"Erro ao executar get_all_person_names(): {e}")
     finally:
@@ -79,17 +92,18 @@ def get_residents_by_unit(unidade: str, bloco: str) -> list[str]:
     Retorna os nomes de moradores que vivem em uma unidade específica de um bloco.
     """
     results = []
-    conn = ODBCConnection()
+    conn = get_db_connection()
     try:
         conn.connect()
         cursor = conn.connection.cursor()
+        placeholder = _get_placeholder(conn)
 
-        query = """
+        query = f"""
             SELECT m.nome
             FROM moradores m
             JOIN unidades u ON m.id_unidade = u.id_unidade
             JOIN blocos b ON u.id_bloco = b.id_bloco
-            WHERE u.numero_unidade = ? AND b.nome_bloco = ?
+            WHERE u.numero_unidade = {placeholder} AND b.nome_bloco = {placeholder}
         """
         cursor.execute(query, (unidade, bloco))
         results = [row[0] for row in cursor.fetchall()]
@@ -106,16 +120,17 @@ def get_residents_by_apartment(unidade: str) -> list[str]:
     Retorna os nomes de moradores que vivem em uma determinada unidade, independente do bloco.
     """
     results = []
-    conn = ODBCConnection()
+    conn = get_db_connection()
     try:
         conn.connect()
         cursor = conn.connection.cursor()
+        placeholder = _get_placeholder(conn)
 
-        query = """
+        query = f"""
             SELECT m.nome
             FROM moradores m
             JOIN unidades u ON m.id_unidade = u.id_unidade
-            WHERE u.numero_unidade = ?
+            WHERE u.numero_unidade = {placeholder}
         """
         cursor.execute(query, (unidade,))
         results = [row[0] for row in cursor.fetchall()]
@@ -133,28 +148,29 @@ def get_residents_by_block(bloco: str, name_like: str | None = None) -> list[str
     Se name_like for fornecido, aplica filtro LIKE no nome.
     """
     results = []
-    conn = ODBCConnection()
+    conn = get_db_connection()
     try:
         conn.connect()
         cursor = conn.connection.cursor()
+        placeholder = _get_placeholder(conn)
 
         if name_like:
-            query = """
+            like_pattern = f"%{name_like}%"
+            query = f"""
                 SELECT m.nome
                 FROM moradores m
                 JOIN unidades u ON m.id_unidade = u.id_unidade
                 JOIN blocos b ON u.id_bloco = b.id_bloco
-                WHERE b.nome_bloco = ? AND m.nome LIKE ?
+                WHERE b.nome_bloco = {placeholder} AND m.nome LIKE {placeholder}
             """
-            like_pattern = f"%{name_like}%"
             cursor.execute(query, (bloco, like_pattern))
         else:
-            query = """
+            query = f"""
                 SELECT m.nome
                 FROM moradores m
                 JOIN unidades u ON m.id_unidade = u.id_unidade
                 JOIN blocos b ON u.id_bloco = b.id_bloco
-                WHERE b.nome_bloco = ?
+                WHERE b.nome_bloco = {placeholder}
             """
             cursor.execute(query, (bloco,))
 
@@ -173,23 +189,25 @@ def get_unit_info_by_name(name: str) -> dict | None:
     Retorna:
         {'apartment': ..., 'block': ...} ou None se não encontrado
     """
-    conn = ODBCConnection()
+    conn = get_db_connection()
     try:
         conn.connect()
         cursor = conn.connection.cursor()
-        query = """
+        placeholder = _get_placeholder(conn)
+
+        query = f"""
             SELECT u.numero_unidade, b.nome_bloco
             FROM moradores m
             JOIN unidades u ON m.id_unidade = u.id_unidade
             JOIN blocos b ON u.id_bloco = b.id_bloco
-            WHERE m.nome = ?
+            WHERE m.nome = {placeholder}
         """
         cursor.execute(query, (name,))
         row = cursor.fetchone()
         if row:
             return {"apartment": row[0], "block": row[1]}
     except Exception as e:
-        logger.error(f"Erro ao buscar unidade por nome '{name}': {e}")
+        logger.error(f"Erro ao executar get_unit_info_by_name('{name}'): {e}")
     finally:
         conn.close()
     return None

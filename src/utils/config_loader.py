@@ -8,15 +8,42 @@ logger = get_logger(__name__)
 CONFIG_DIR = Path(__file__).parent.parent.parent / "configs"
 DATA_SANITIZE_DIR = Path(__file__).parent.parent.parent / "data" / "sanitize"
 
-
 # --- BANCO DE DADOS ---
 def load_db_config() -> dict:
+    """
+    Carrega e valida as configurações de banco de dados a partir do arquivo YAML.
+    Suporta SQL Server (via ODBC) e MySQL (via pymysql).
+    """
     path = CONFIG_DIR / "db_connection.yml"
+
     if not path.exists():
         logger.error(f"Arquivo de conexão não encontrado: {path}")
         raise FileNotFoundError(path)
+
     with open(path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f)
+        config = yaml.safe_load(f)
+
+    if not config:
+        raise ValueError("Arquivo de configuração está vazio ou inválido.")
+
+    # --- Verifica engine ---
+    engine = config.get("engine", "").lower()
+    if engine not in {"sqlserver", "mysql"}:
+        raise ValueError("Campo 'engine' inválido ou ausente. Use 'sqlserver' ou 'mysql'.")
+
+    # --- Define chaves obrigatórias ---
+    required_keys = {
+        "sqlserver": {"server", "database", "username", "password", "driver"},
+        "mysql": {"host", "port", "database", "username", "password"},
+    }
+
+    missing = required_keys[engine] - config.keys()
+    if missing:
+        raise KeyError(f"As seguintes chaves estão faltando para o engine '{engine}': {missing}")
+
+    logger.info(f"Configuração do banco carregada com sucesso ({engine.upper()})")
+    return config
+
 
 
 # --- STOP TOKENS (para nomes, NER) ---
