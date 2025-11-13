@@ -22,7 +22,8 @@ Este projeto consiste em uma API que extrai informações de moradores (nome, en
 - [FastAPI](https://fastapi.tiangolo.com) para construir a API do projeto
 - [Uvicorn](https://uvicorn.dev), servidor ASGI (Interface de Gateway de Servidor Assíncrono, ou, em inglês, _Asynchronous Server Gateway Interface_) que executará a aplicação **FastAPI**
 - [SQL Azure Database](https://learn.microsoft.com/pt-br/azure/azure-sql/database/sql-database-paas-overview?view=azuresql) é o serviço de banco de dados totalmente gerenciado, oferecido pela **Microsoft**, que armazenará as informações dos moradores e de suas respectivas encomendas
-- [MySQL Database](https://www.mysql.com/about) é um sistema de gerenciamento de banco de dados relacional (RDBMS) de código aberto, que também pode ser usado para armazenar as dos moradores e de suas respectivas encomendas
+- [MySQL Database](https://www.mysql.com/about) é um sistema de gerenciamento de banco de dados relacional (RDBMS) de código aberto, que também pode ser usado para armazenar as informações dos moradores e de suas respectivas encomendas
+- [Docker](https://docs.docker.com) é uma plataforma de código aberto que permite aos desenvolvedores construir, distribuir e executar aplicações de forma isolada dentro de "contêineres", como a API do projeto atual
 - Logging integrado para debug e rastreamento
 
 ## Instalação 
@@ -400,3 +401,132 @@ uvicorn api:app --reload
 
 > Poderá haver casos em que o `extractor` irá retornar com status de erro (indicando erro na comunicação com o servidor), com erros da aplicação (uma chave `"error"` com a mensagem de erro) e com mais de um candidato a morador da etiqueta (uma lista com os nomes na chave `"names"` e uma chave `"names_with_uinits"` com o dicionário de nomes associados às unidades residenciais de cada possível candidato).
 
+### Usando `Docker` (📦 Container)
+
+A aplicação pode ser executada facilmente dentro de um container Docker, sem a necessidade de instalar manualmente dependências como Python, drivers ODBC ou Tesseract OCR. 
+
+- 💡 Os comandos do **Docker** com `sudo` só são necessários se for rodar no sistema operacional **Linux (Debian/Ubuntu)**, para rodar em **Docker Desktop** no **Windows** ou  **macOS** basta copiar os comandos e apagar o `sudo` deles.
+
+Siga os passos abaixo:
+
+> 🧰 **1. Instalar o Docker**
+
+Caso ainda não tenha o Docker instalado, siga as instruções oficiais de acordo com seu sistema operacional:
+
+- **Linux (Debian/Ubuntu)**:
+```
+sudo apt update
+sudo apt install docker.io -y
+sudo systemctl enable docker
+sudo systemctl start docker
+```
+
+Para verificar se está funcionando:
+```
+docker run hello-world
+```
+- **Windows / macOS**:
+    - Baixe e instale o [Docker Desktop](https://www.docker.com/products/docker-desktop)
+    - Após a instalação, abra o terminal integrado do Docker Desktop e teste:
+      
+```
+docker run hello-world
+```
+
+> 🏗️ **2. Criar a imagem da aplicação**
+
+No diretório raiz do projeto (onde está o arquivo `Dockerfile`), execute o comando abaixo para construir a imagem Docker da API:
+```
+sudo docker build -t condo-package-scanner-api .
+```
+
+Esse processo pode demorar alguns minutos, pois ele:
+
+- Baixa a imagem base do Python.
+
+- Instala dependências do sistema (ODBC, Tesseract, etc.).
+
+- Copia o código da aplicação para dentro do container.
+
+Ao finalizar, você verá uma mensagem semelhante a:
+```
+Successfully tagged condo-package-scanner-api:lates
+```
+
+> 🚀 **3. Executar o container**
+
+Depois da imagem criada, rode o container com o comando:
+
+```
+sudo docker run -d -p 8000:8000 --name condo-api condo-package-scanner-api
+```
+
+- Esse comando:
+    - Inicia o container em modo “**detached**” (em segundo plano);
+    - Faz o **mapeamento da porta 8000** do container para a porta 8000 local, permitindo acessar a API via navegador ou Postman;
+    - Nomeia o container como `condo-api`.
+
+- 💡 Caso já exista um container com esse nome, remova-o antes de recriar:
+```
+sudo docker rm -f condo-api
+```
+
+> 🧩 **4. Acessar a API**
+
+Após o container estar em execução, a API estará disponível em:
+
+👉 http://localhost:8000
+
+Você pode testar diretamente os endpoints no navegador ou ferramentas como Insomnia ou Postman.
+A documentação interativa da API (Swagger UI) estará disponível em:
+
+🔗 http://localhost:8000/docs
+
+> 📊 **5. Ver logs da aplicação**
+
+Para visualizar os logs em tempo real:
+```
+sudo docker logs -f condo-api
+```
+
+Isso mostrará as mensagens de inicialização, processamento de OCR, consultas ao banco, etc.
+
+> 🛑 **6. Parar e remover o container**
+
+Para parar o container :
+```
+sudo docker stop condo-api
+```
+
+Para removê-lo completamente:
+```
+sudo docker rm condo-api
+```
+
+> ♻️ **7. Atualizar a imagem**
+
+Se você fizer alterações no código da aplicação, basta reconstruir a imagem com:
+```
+sudo docker build -t condo-package-scanner-api .
+```
+
+E reiniciar o container:
+```
+sudo docker rm -f condo-api
+sudo docker run -d -p 8000:8000 --name condo-api condo-package-scanner-api
+```
+
+✅ Exemplo de fluxo completo
+```
+# Construir imagem
+sudo docker build -t condo-package-scanner-api .
+
+# Executar container
+sudo docker run -d -p 8000:8000 --name condo-api condo-package-scanner-api
+
+# Ver logs
+sudo docker logs -f condo-api
+
+# Acessar no navegador
+# 👉 http://localhost:8000/docs
+```
