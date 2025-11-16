@@ -13,9 +13,8 @@ class CondoPackageLabel:
             self.__image = Image.open(BytesIO(image))
             self.logger.info("Sticker criado a partir de imagem em memória.")
         else:
-            base_dir = Path(__file__).parent
-            self.__image_path = base_dir.parent / "assets" / image
-            self.__image = Image.open(self.__image_path)
+            self.__image_path = image
+            self.__image = Image.open(self.image_path)
             self.logger.info(f"Sticker criado para a imagem: {self.__image_path}")
 
 

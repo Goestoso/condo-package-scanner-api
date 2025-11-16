@@ -38,6 +38,7 @@ def search_person_like(name_candidate: str) -> list[str]:
         logger.debug(f"search_person_like('{name_candidate}') -> {results}")
     except Exception as e:
         logger.error(f"Erro ao executar search_person_like('{name_candidate}'): {e}")
+        raise   # <= deixa a exceção subir para o controller
     finally:
         conn.close()
     return results
@@ -63,10 +64,10 @@ def get_max_name_length() -> int:
         logger.debug(f"get_max_name_length() -> {max_len}")
     except Exception as e:
         logger.error(f"Erro ao executar get_max_name_length(): {e}")
+        raise   # <= deixa a exceção subir para o controller
     finally:
         conn.close()
-    return max_len
-
+        return max_len
 
 def get_all_person_names() -> list[str]:
     """
@@ -82,6 +83,7 @@ def get_all_person_names() -> list[str]:
         logger.debug(f"get_all_person_names() -> {len(names)} nomes")
     except Exception as e:
         logger.error(f"Erro ao executar get_all_person_names(): {e}")
+        raise   # <= deixa a exceção subir para o controller
     finally:
         conn.close()
     return names
@@ -110,6 +112,7 @@ def get_residents_by_unit(unidade: str, bloco: str) -> list[str]:
         logger.debug(f"get_residents_by_unit(unidade={unidade}, bloco={bloco}) -> {results}")
     except Exception as e:
         logger.error(f"Erro ao executar get_residents_by_unit(unidade={unidade}, bloco={bloco}): {e}")
+        raise   # <= deixa a exceção subir para o controller
     finally:
         conn.close()
     return results
@@ -137,6 +140,7 @@ def get_residents_by_apartment(unidade: str) -> list[str]:
         logger.debug(f"get_residents_by_apartment(unidade={unidade}) -> {results}")
     except Exception as e:
         logger.error(f"Erro ao executar get_residents_by_apartment(unidade={unidade}): {e}")
+        raise   # <= deixa a exceção subir para o controller
     finally:
         conn.close()
     return results
@@ -178,6 +182,7 @@ def get_residents_by_block(bloco: str, name_like: str | None = None) -> list[str
         logger.debug(f"get_residents_by_block(bloco={bloco}, like={name_like}) -> {results}")
     except Exception as e:
         logger.error(f"Erro ao executar get_residents_by_block(bloco={bloco}, like={name_like}): {e}")
+        raise   # <= deixa a exceção subir para o controller
     finally:
         conn.close()
     return results
@@ -208,6 +213,7 @@ def get_unit_info_by_name(name: str) -> dict | None:
             return {"apartment": row[0], "block": row[1]}
     except Exception as e:
         logger.error(f"Erro ao executar get_unit_info_by_name('{name}'): {e}")
+        raise   # <= deixa a exceção subir para o controller
     finally:
         conn.close()
     return None

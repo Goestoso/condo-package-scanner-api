@@ -374,13 +374,13 @@ python CondoPackageScannerAPI.py
 2025-10-26 00:44:24 | src.main | INFO | Extração completa: {'names': ['Joao Dias'], 'unit_info': {'apartment': '672', 'block': 'F'}}
 ```
 
-### Usando `api.py` (🌐 Servidor)
+### Usando `server.py` (🌐 Servidor)
 
 - Para iniciar o servidor, rode o comando (no diretório do projeto) via terminal:
 ```
-uvicorn api:app --reload
+uvicorn server:app --reload
 ```
-> Isso irá executar o programa `api.py` (onde está definida a aplicação **FastAPI**) usando o servidor **Uvicorn**.
+> Isso irá executar o programa `server.py` (onde está definida a aplicação **FastAPI**) usando o servidor **Uvicorn**.
 
 - Para parar o servidor:
     - Pressione as teclas `Ctrl` + `C`

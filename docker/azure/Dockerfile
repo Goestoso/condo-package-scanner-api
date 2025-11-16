@@ -34,7 +34,7 @@ COPY src ./src
 COPY configs ./configs
 COPY models ./models
 COPY data/sanitize ./data/sanitize
-COPY api.py ./
+COPY server.py ./
 
 # Cria diretório de logs
 RUN mkdir -p logs
@@ -43,4 +43,4 @@ RUN mkdir -p logs
 EXPOSE 8000
 
 # Comando de inicialização
-CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8000"]
