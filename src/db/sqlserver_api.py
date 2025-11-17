@@ -1,5 +1,8 @@
 # src/db/sqlserver_api.py
 import pyodbc
+from src.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 class SQLServerConnection:
     def __init__(self, config):
@@ -7,6 +10,7 @@ class SQLServerConnection:
         self.connection = None
 
     def connect(self):
+        logger.debug(f"Conectando ao SQL Server ({self.config['server']}) usando o driver {self.config['driver']}...")
         conn_str = (
             f"DRIVER={self.config['driver']};"
             f"SERVER={self.config['server']};"
@@ -18,7 +22,9 @@ class SQLServerConnection:
             f"Connection Timeout={self.config.get('connection_timeout', 30)};"
         )
         self.connection = pyodbc.connect(conn_str)
+        logger.info("Conexão SQL Server estabelecida com sucesso.")
 
     def close(self):
         if self.connection:
             self.connection.close()
+            logger.info("Conexão SQL Server encerrada.")
