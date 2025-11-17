@@ -30,8 +30,8 @@ Este projeto consiste em uma API que extrai informações de moradores (nome, en
 1. Clone o repositório:
 
 ```
-git clone https://github.com/seu-usuario/order-scanner-api.git
-cd order-scanner-api
+git clone https://github.com/seu-usuario/cond-package-scanner-api.git
+cd condo-package-scanner-api
 ```
 
 2. Crie e ative um ambiente virtual:
@@ -123,11 +123,12 @@ condo-package-scanner-api/
 ├─ assets/               # Imagens para teste
 ├─ configs/              # Configurações (normalização, logger, conexão com o banco)
 ├─ data/                 # Datasets auxiliares e stop words\tokens para sanitização
+├─ docker/               # Dockerfiles para ambientes Azure ou MySQL
 ├─ models/               # Modelos NER treinados
 ├─ scripts/              # Scripts para atualização de datasets e modelos
 ├─ src/                  # Código-fonte principal
 ├─ tests/                # Testes unitários e integração
-├─ api.py                # Onde está definido a aplicação FastAPI que rodará pelo servidor Uvicorn
+├─ server.py                # Onde está definido a aplicação FastAPI que rodará pelo servidor Uvicorn
 └─ CondoPackageScanner.py     # Executável
 ```
 
@@ -308,7 +309,7 @@ O projeto utiliza logging para monitoramento do pipeline, debug e rastreamento d
 
 **Observações**
 
-- Mantenha `DEBUG` durante testes e ajustes de modelos."
+- Mantenha `DEBUG` durante testes e ajustes de modelos.
 - Em produção, utilize `INFO` ou `WARNING` para reduzir mensagens.
 - Logs ajudam a identificar problemas no OCR, NER ou fuzzy match.
 
@@ -320,58 +321,45 @@ O projeto utiliza logging para monitoramento do pipeline, debug e rastreamento d
 
 Para executar a aplicação:
 
-1. Adicione a imagem de etiqueta de encomenda de condomínio (foque nos dados do morador para facilitar o processo) dentro do diretório `assets/`.
-2. No código do ponto de entrada da aplicação, chamado `CondoPackageScannerAPI.py`, insira o nome do arquivo da imagem no trecho sinalizado abaixo:
+1. Baixe a imagem da etiqueta de condomínio
+2. Execute o programa `CondoPackageScannerAPI.py` usando o _python_ via terminal passando o caminho da imagem como argumento, por exemplo:
 ```
-if __name__ == '__main__':
-
-    main("imagem_etiqueta.jpg") # <----- Insira o nome do arquivo da imagem no argumento da função main()
-```
-3. Execute o programa `CondoPackageScannerAPI.py` usando o _python_ via terminal:
-```
-python CondoPackageScannerAPI.py
+python CondoPackageScanner.py .\assets\correios.jpg
 ```
 
-4. Durante e após a execução do programa, algumas informações irão aparecer no console e no arquivo `.log`, conforme a configuração do arquivo `configs/logger_config.yml`, por exemplo:
+3. Durante e após a execução do programa, algumas informações irão aparecer no console e no arquivo `.log`, conforme a configuração do arquivo `configs/logger_config.yml`, por exemplo:
 ```
-2025-10-26 00:44:18 | src.main | INFO | Iniciando extração da imagem: correios.jpg
-2025-10-26 00:44:18 | Extractor | INFO | Sticker criado para a imagem: /home/patton/Documents/tg/condo-package-scanner-api/assets/correios.jpg
-2025-10-26 00:44:18 | Extractor | INFO | Carregando modelos NER...
-2025-10-26 00:44:18 | Extractor | INFO | Modelos carregados com sucesso.
-2025-10-26 00:44:18 | Extractor | INFO | OCR concluído. Texto extraído com 283 caracteres
-2025-10-26 00:44:18 | src.main | INFO | OCR concluído.
-2025-10-26 00:44:18 | Extractor | INFO | Candidatos a nomes extraídos: ['João Dias']
-2025-10-26 00:44:18 | Extractor | INFO | Candidatos a endereços extraídos: {'STREET': ['Rua Jonas Fonseca'], 'NUMBER': ['01000', '1 m 112233', '250', 'Volume 1'], 'COMPLEMENT': ['Condominio Azul Apartamento Sao Goncalo'], 'CITY': ['Ii Condominio Nome Legivel Destinatario', 'Joao Dias', 'Pedido', 'Remotento Sigep Web Ambiente Homologacao'], 'STATE': []}
-2025-10-26 00:44:18 | Extractor | INFO | Nenhum bloco ou apartamento identificado no endereço extraído.
-2025-10-26 00:44:18 | src.db.odbc_api | INFO | Arquivo de configuração do banco carregado com sucesso.
-2025-10-26 00:44:24 | src.db.odbc_api | INFO | Conexão com o banco de dados 'db-condominios-encomendas' no servidor 'condominio-server.database.windows.net' estabelecida com sucesso.
-2025-10-26 00:44:24 | src.db.odbc_api | INFO | Conexão com o banco de dados encerrada com sucesso.
-2025-10-26 00:44:24 | src.db.odbc_api | INFO | Arquivo de configuração do banco carregado com sucesso.
-2025-10-26 00:44:24 | src.db.odbc_api | INFO | Conexão com o banco de dados 'db-condominios-encomendas' no servidor 'condominio-server.database.windows.net' estabelecida com sucesso.
-2025-10-26 00:44:24 | src.db.odbc_api | INFO | Conexão com o banco de dados encerrada com sucesso.
-2025-10-26 00:44:24 | src.db.odbc_api | INFO | Arquivo de configuração do banco carregado com sucesso.
-2025-10-26 00:44:24 | src.db.odbc_api | INFO | Conexão com o banco de dados 'db-condominios-encomendas' no servidor 'condominio-server.database.windows.net' estabelecida com sucesso.
-2025-10-26 00:44:24 | src.db.odbc_api | INFO | Conexão com o banco de dados encerrada com sucesso.
-2025-10-26 00:44:24 | src.utils.validators | INFO | Nome 'João Dias' validado via LIKE único: Joao Dias
-2025-10-26 00:44:24 | src.utils.validators | INFO | Buscando moradores do apartamento 672, bloco F
-2025-10-26 00:44:24 | src.db.odbc_api | INFO | Arquivo de configuração do banco carregado com sucesso.
-2025-10-26 00:44:24 | src.db.odbc_api | INFO | Conexão com o banco de dados 'db-condominios-encomendas' no servidor 'condominio-server.database.windows.net' estabelecida com sucesso.
-2025-10-26 00:44:24 | src.db.odbc_api | INFO | Conexão com o banco de dados encerrada com sucesso.
-2025-10-26 00:44:24 | src.utils.validators | INFO | Nome 'Joao Dias' validado via fuzzy forte (>=70): {'Joao Dias'}
-2025-10-26 00:44:24 | src.utils.validators | INFO | Validação por unidade concluída. Resultados: {'Joao Dias'}
-2025-10-26 00:44:24 | src.db.odbc_api | INFO | Arquivo de configuração do banco carregado com sucesso.
-2025-10-26 00:44:24 | src.db.odbc_api | INFO | Conexão com o banco de dados 'db-condominios-encomendas' no servidor 'condominio-server.database.windows.net' estabelecida com sucesso.
-2025-10-26 00:44:24 | src.db.odbc_api | INFO | Conexão com o banco de dados encerrada com sucesso.
-2025-10-26 00:44:24 | src.utils.validators | INFO | Buscando moradores do apartamento 672, bloco F
-2025-10-26 00:44:24 | src.db.odbc_api | INFO | Arquivo de configuração do banco carregado com sucesso.
-2025-10-26 00:44:24 | src.db.odbc_api | INFO | Conexão com o banco de dados 'db-condominios-encomendas' no servidor 'condominio-server.database.windows.net' estabelecida com sucesso.
-2025-10-26 00:44:24 | src.db.odbc_api | INFO | Conexão com o banco de dados encerrada com sucesso.
-2025-10-26 00:44:24 | src.utils.validators | INFO | Nome 'Joao Dias' validado via fuzzy forte (>=70): {'Joao Dias'}
-2025-10-26 00:44:24 | src.utils.validators | INFO | Validação por unidade concluída. Resultados: {'Joao Dias'}
-2025-10-26 00:44:24 | src.db.odbc_api | INFO | Arquivo de configuração do banco carregado com sucesso.
-2025-10-26 00:44:24 | src.db.odbc_api | INFO | Conexão com o banco de dados 'db-condominios-encomendas' no servidor 'condominio-server.database.windows.net' estabelecida com sucesso.
-2025-10-26 00:44:24 | src.db.odbc_api | INFO | Conexão com o banco de dados encerrada com sucesso.
-2025-10-26 00:44:24 | src.main | INFO | Extração completa: {'names': ['Joao Dias'], 'unit_info': {'apartment': '672', 'block': 'F'}}
+2025-11-17 00:05:11 | src.main | INFO | Iniciando App...
+2025-11-17 00:05:11 | Extractor | INFO | Sticker criado para a imagem: ./assets/correios.jpg
+2025-11-17 00:05:11 | Extractor | INFO | Carregando modelos NER...
+2025-11-17 00:05:12 | Extractor | INFO | Modelos carregados com sucesso.
+2025-11-17 00:05:12 | Extractor | INFO | OCR concluído (283 caracteres)
+2025-11-17 00:05:12 | Extractor | INFO | Candidatos a nomes extraídos: ['João Dias']
+2025-11-17 00:05:12 | Extractor | INFO | Candidatos a endereços extraídos: {'STREET': ['Rua Jonas Fonseca'], 'NUMBER': ['01000', '1 m 112233', '250', 'Volume 1'], 'COMPLEMENT': ['Condominio Azul Apartamento Sao Goncalo'], 'CITY': ['Ii Condominio Nome Legivel Destinatario', 'Joao Dias', 'Pedido', 'Remotento Sigep Web Ambiente Homologacao'], 'STATE': []}
+2025-11-17 00:05:12 | Extractor | INFO | Nenhum bloco ou apartamento identificado no endereço extraído.
+2025-11-17 00:05:12 | src.utils.config_loader | INFO | Configuração do banco carregada com sucesso (SQLSERVER)
+2025-11-17 00:05:12 | src.db.sqlserver_api | INFO | Conexão SQL Server estabelecida com sucesso.
+2025-11-17 00:05:12 | src.db.sqlserver_api | INFO | Conexão SQL Server encerrada.
+2025-11-17 00:05:12 | src.utils.config_loader | INFO | Configuração do banco carregada com sucesso (SQLSERVER)
+2025-11-17 00:05:12 | src.db.sqlserver_api | INFO | Conexão SQL Server estabelecida com sucesso.
+2025-11-17 00:05:12 | src.db.sqlserver_api | INFO | Conexão SQL Server encerrada.
+2025-11-17 00:05:12 | src.utils.config_loader | INFO | Configuração do banco carregada com sucesso (SQLSERVER)
+2025-11-17 00:05:12 | src.db.sqlserver_api | INFO | Conexão SQL Server estabelecida com sucesso.
+2025-11-17 00:05:12 | src.db.sqlserver_api | INFO | Conexão SQL Server encerrada.
+2025-11-17 00:05:12 | src.utils.validators | INFO | Nome 'João Dias' validado via LIKE único: Joao Dias
+2025-11-17 00:05:12 | src.utils.validators | INFO | Buscando moradores do apartamento 672, bloco F
+2025-11-17 00:05:12 | src.utils.config_loader | INFO | Configuração do banco carregada com sucesso (SQLSERVER)
+2025-11-17 00:05:12 | src.db.sqlserver_api | INFO | Conexão SQL Server estabelecida com sucesso.
+2025-11-17 00:05:12 | src.db.sqlserver_api | INFO | Conexão SQL Server encerrada.
+2025-11-17 00:05:12 | src.utils.validators | INFO | Nome 'Joao Dias' validado via fuzzy forte (>=70): {'Joao Dias'}
+2025-11-17 00:05:12 | src.utils.validators | INFO | Validação por unidade concluída. Resultados: {'Joao Dias'}
+2025-11-17 00:05:12 | src.utils.config_loader | INFO | Configuração do banco carregada com sucesso (SQLSERVER)
+2025-11-17 00:05:12 | src.db.sqlserver_api | INFO | Conexão SQL Server estabelecida com sucesso.
+2025-11-17 00:05:12 | src.db.sqlserver_api | INFO | Conexão SQL Server encerrada.
+2025-11-17 00:05:12 | src.main | INFO | Encerrando App...
+
+===== RESULTADO =====
+{'candidates': 1, 'names_with_units_info': {'Joao Dias': {'apartment': '672', 'block': 'F'}}, 'reason': 'Candidato único validado no banco de dados'}
 ```
 
 ### Usando `server.py` (🌐 Servidor)
@@ -385,21 +373,34 @@ uvicorn server:app --reload
 - Para parar o servidor:
     - Pressione as teclas `Ctrl` + `C`
 
- - Os retornos seguirão o seguinte padrão:
+ - Os retornos seguirão o seguinte padrão em caso de **sucesso**:
 ```
 {
   "status": "success",
   "data": {
-    "names": ["Nome do morador"],
-    "unit_info": {
-      "apartment": "16",
-      "block": "A"
+    "candidates": int,
+    "names_with_units_info": {
+      "name1": {"apartment": str, "block": str},
+      "name2": {"apartment": str, "block": str},
+      ...
+      },
+    "reason": str
     }
   }
 }
 ```
 
-> Poderá haver casos em que o `extractor` irá retornar com status de erro (indicando erro na comunicação com o servidor), com erros da aplicação (uma chave `"error"` com a mensagem de erro) e com mais de um candidato a morador da etiqueta (uma lista com os nomes na chave `"names"` e uma chave `"names_with_uinits"` com o dicionário de nomes associados às unidades residenciais de cada possível candidato).
+- Os retornos seguirão o seguinte padrão em caso de **erro**:
+
+```
+{
+  "status": "error",
+  "data": {
+    "message": str,
+    "traceback": str
+  }
+}
+```
 
 ### Usando `Docker` (📦 Container)
 
@@ -435,9 +436,9 @@ docker run hello-world
 
 > 🏗️ **2. Criar a imagem da aplicação**
 
-No diretório raiz do projeto (onde está o arquivo `Dockerfile`), execute o comando abaixo para construir a imagem Docker da API:
+No diretório do projeto onde está o arquivo `Dockerfile` (`/docker/mysql/` ou `/docker/azure/`, escolha conforme o tipo de conexão com o banco de dados a ser usada), execute o comando abaixo para construir a imagem Docker da API (os exemplos serão com a conexão **Azure**):
 ```
-sudo docker build -t condo-package-scanner-api .
+sudo docker build -t condo-package-scanner-api:azure-v1 -f ./docker/azure/Dockerfile .
 ```
 
 Esse processo pode demorar alguns minutos, pois ele:
@@ -458,17 +459,30 @@ Successfully tagged condo-package-scanner-api:lates
 Depois da imagem criada, rode o container com o comando:
 
 ```
-sudo docker run -d -p 8000:8000 --name condo-api condo-package-scanner-api
+docker run -d \                                                                                                                                                         
+  --name condo-api-azure \
+  -p 8000:8000 \
+  condo-package-scanner-api:azure-v1
 ```
 
 - Esse comando:
     - Inicia o container em modo “**detached**” (em segundo plano);
     - Faz o **mapeamento da porta 8000** do container para a porta 8000 local, permitindo acessar a API via navegador ou Postman;
-    - Nomeia o container como `condo-api`.
+    - Nomeia o container como `condo-api-azure`.
 
 - 💡 Caso já exista um container com esse nome, remova-o antes de recriar:
 ```
-sudo docker rm -f condo-api
+sudo docker rm -f condo-api-azure
+```
+
+- 👁️ Para verificar se o container está em execução:
+```
+docker ps
+```
+Aparecerá uma mensagem semelhante a essa:
+```
+CONTAINER ID   IMAGE                                  COMMAND                  CREATED         STATUS         PORTS                                         NAMES
+6db7728ca467   condo-package-scanner-api:azure-v1   "uvicorn server:app …"   4 seconds ago   Up 3 seconds   0.0.0.0:8000->8000/tcp, [::]:8000->8000/tcp   condo-api-azure
 ```
 
 > 🧩 **4. Acessar a API**
@@ -486,7 +500,7 @@ A documentação interativa da API (Swagger UI) estará disponível em:
 
 Para visualizar os logs em tempo real:
 ```
-sudo docker logs -f condo-api
+sudo docker logs -f condo-api-azure
 ```
 
 Isso mostrará as mensagens de inicialização, processamento de OCR, consultas ao banco, etc.
@@ -495,38 +509,26 @@ Isso mostrará as mensagens de inicialização, processamento de OCR, consultas 
 
 Para parar o container :
 ```
-sudo docker stop condo-api
+sudo docker stop condo-api-azure
 ```
 
 Para removê-lo completamente:
 ```
-sudo docker rm condo-api
+sudo docker rm condo-api-azure
 ```
 
 > ♻️ **7. Atualizar a imagem**
 
 Se você fizer alterações no código da aplicação, basta reconstruir a imagem com:
 ```
-sudo docker build -t condo-package-scanner-api .
+sudo docker build -t condo-package-scanner-api:azure-v1 -f ./docker/azure/Dockerfile .
 ```
 
 E reiniciar o container:
 ```
-sudo docker rm -f condo-api
-sudo docker run -d -p 8000:8000 --name condo-api condo-package-scanner-api
-```
-
-✅ Exemplo de fluxo completo
-```
-# Construir imagem
-sudo docker build -t condo-package-scanner-api .
-
-# Executar container
-sudo docker run -d -p 8000:8000 --name condo-api condo-package-scanner-api
-
-# Ver logs
-sudo docker logs -f condo-api
-
-# Acessar no navegador
-# 👉 http://localhost:8000/docs
+sudo docker rm -f condo-api-azure
+sudo docker run -d \                                                                                                                                                         
+  --name condo-api-azure \
+  -p 8000:8000 \
+  condo-package-scanner-api:azure-v1
 ```
