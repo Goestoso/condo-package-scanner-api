@@ -15,7 +15,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Condo Package Scanner API",
-    version="0.5.0",
+    version="0.6.0",
     lifespan=lifespan
 )
 

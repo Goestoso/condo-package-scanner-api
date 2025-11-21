@@ -39,3 +39,17 @@ pet
 recebedor
 Endereco
 EXPRESS
+Ltda
+Telefone
+Televenda
+Parceiro
+Peças
+Próximo
+Produtos
+Alimenticios
+Delivery
+Transportes
+Norma
+Transportadora
+Drogaria
+Série

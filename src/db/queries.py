@@ -47,6 +47,7 @@ def search_person_like(name_candidate: str) -> list[str]:
 def get_max_name_length() -> int:
     """
     Retorna o comprimento máximo do campo nome na tabela 'moradores'.
+    Lança exceção se não for possível capturar corretamente.
     """
     max_len = 0
     conn = get_db_connection()
@@ -61,13 +62,19 @@ def get_max_name_length() -> int:
         row = cursor.fetchone()
         if row and row[0]:
             max_len = row[0]
+
+        if max_len <= 0:
+            raise ValueError("Não foi possível capturar o tamanho máximo de nome. Resultado inválido ou tabela vazia.")
+
         logger.debug(f"get_max_name_length() -> {max_len}")
+
+        return max_len
+
     except Exception as e:
         logger.error(f"Erro ao executar get_max_name_length(): {e}")
-        raise   # <= deixa a exceção subir para o controller
+        raise  # deixa a exceção subir para o controller
     finally:
         conn.close()
-        return max_len
 
 def get_all_person_names() -> list[str]:
     """

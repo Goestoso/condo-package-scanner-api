@@ -41,10 +41,8 @@ def load_db_config() -> dict:
     if missing:
         raise KeyError(f"As seguintes chaves estão faltando para o engine '{engine}': {missing}")
 
-    logger.info(f"Configuração do banco carregada com sucesso ({engine.upper()})")
+    logger.debug(f"Configuração do banco carregada com sucesso ({engine.upper()})")
     return config
-
-
 
 # --- STOP TOKENS (para nomes, NER) ---
 def load_stop_name_tokens() -> set:

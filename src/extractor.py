@@ -74,8 +74,8 @@ class Extractor(CondoPackageLabel):
         apartment = None
         block = None
 
-        apt_pattern = re.compile(r'\b(?:ap|apt|apartamento)\s*(\d{1,4})\b', re.IGNORECASE)
-        block_pattern = re.compile(r'\b(?:bloco|bl|blc)\s*([A-Z0-9]{1,3})\b', re.IGNORECASE)
+        apt_pattern = re.compile(r'\bapartamento\s*([0-9]{1,4})\b', re.IGNORECASE)
+        block_pattern = re.compile(r'\bbloco\s*([A-Z0-9]{1,3})\b', re.IGNORECASE)
 
         for label, texts in self.__candidates_address.items():
             for text in texts:
