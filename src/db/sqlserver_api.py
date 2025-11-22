@@ -22,9 +22,9 @@ class SQLServerConnection:
             f"Connection Timeout={self.config.get('connection_timeout', 30)};"
         )
         self.connection = pyodbc.connect(conn_str)
-        logger.info("Conexão SQL Server estabelecida com sucesso.")
+        logger.debug("Conexão SQL Server estabelecida com sucesso.")
 
     def close(self):
         if self.connection:
             self.connection.close()
-            logger.info("Conexão SQL Server encerrada.")
+            logger.debug("Conexão SQL Server encerrada.")

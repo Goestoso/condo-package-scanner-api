@@ -5,153 +5,232 @@ from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
+
 def validate_recipient_name_candidates(candidates: set):
     """
-    Validação de candidatos extraídos pelo NER:
-    - Testa nome completo via LIKE
-    - Em caso de falha, tenta combinações parciais (janelas de 2+ tokens)
-    - Fallback com fuzzy global, retornando top-3 por score >=70
-    - Retorna tupla (set de nomes validados, dict de nomes com unidade)
+    Valida nomes identificados pelo NER com múltiplas estratégias:
+    1) LIKE do nome completo
+    2) LIKE por tokens individuais
+    3) Janelas de tokens (fallback)
+    4) Fuzzy global (último recurso)
+    Retorna:
+        - set de nomes validados
+        - dict nome->unidade
     """
-    validated_names = set()
-    names_with_units = {}  # novo: armazena unidade por nome
+
+    validated = set()
+    names_with_units = {}
+
     if not candidates:
         logger.info("Nenhum candidato recebido para validação.")
-        return validated_names, names_with_units
+        return validated, names_with_units
 
-    max_name_len = get_max_name_length()
-    max_results_limit = 50
-    all_names = None
+    #max_name_len = max_name_length
+    max_results = 50
+    all_names_cache = None  # lazy loading
 
-    def safe_unpack_match(t):
-        if not t:
-            return None, 0
-        if len(t) >= 2:
-            return t[0], float(t[1])
-        return t[0], 0.0
+    # -----------------------------------------------------
+    # Helpers
+    # -----------------------------------------------------
 
-    def handle_fuzzy_with_near_matches(results, name):
-        if not results:
+    def safe_score(entry):
+        return (entry[0], float(entry[1])) if entry and len(entry) >= 2 else (None, 0.0)
+
+    def select_by_fuzzy(results, target, threshold=70, limit=None):
+        matches = fuzzy_compare(candidates=results, name=target)
+        if not matches:
+            logger.debug(f"Nenhum match fuzzy encontrado para '{target}'")
             return set()
-        scores = [safe_unpack_match(r)[1] for r in results]
-        max_score = max(scores) if scores else 0
-        near_matches = {normalize_name(safe_unpack_match(r)[0]) for r in results if safe_unpack_match(r)[1] == max_score}
-        logger.debug(f"Near matches para '{name}' (score {max_score}): {near_matches}")
-        return near_matches
 
-    def generate_name_windows(tokens: list[str], min_size: int = 2) -> list[str]:
-        windows = []
-        for size in range(min_size, len(tokens)+1):
-            for i in range(len(tokens)-size+1):
-                windows.append(" ".join(tokens[i:i+size]))
-        return windows
+        # Ordena por score desc
+        matches.sort(key=lambda x: x[1], reverse=True)
+        best_name, best_score = matches[0]
+        best_name = normalize_name(best_name)
 
-    for ner_name in candidates:
-        logger.debug(f"Validando candidato: '{ner_name}'")
-        if len(ner_name) > max_name_len:
-            logger.info(f"Candidato '{ner_name}' descartado por ultrapassar max_name_len ({max_name_len})")
-            continue
+        # ------------------------------------------------------------
+        # 🚨 NOVA REGRA:
+        # Se o melhor score >=70 → retorna SOMENTE o melhor candidato
+        # ------------------------------------------------------------
+        if best_score >= threshold:
+            logger.info(
+                f"'{target}' validado via fuzzy forte (score {best_score}): "
+                f"[{best_name}]"
+            )
+            return {best_name}
 
-        # --- 1) LIKE completo ---
-        results = search_person_like(ner_name)
-        if len(results) == 1:
-            normalized_name = normalize_name(results[0])
-            validated_names.add(normalized_name)
-            unit = get_unit_info_by_name(normalized_name)
+        # ------------------------------------------------------------
+        # Fallback atual: pega todos ≥ 55 (threshold global)
+        # ------------------------------------------------------------
+        selected = [
+            (normalize_name(n), s)
+            for n, s in matches
+            if s >= 55
+        ]
+
+        if selected:
+            logger.info(
+                f"'{target}' validado via fuzzy intermediário (score {best_score}): "
+                f"{[n for n, _ in selected]}"
+            )
+            return {n for n, _ in selected}
+
+        # ------------------------------------------------------------
+        # Último fallback: pega só os melhores scores
+        # ------------------------------------------------------------
+        max_score = best_score
+        best_matches = [
+            normalize_name(n)
+            for n, s in matches
+            if s == max_score
+        ]
+
+        logger.info(
+            f"'{target}' validado via fuzzy fallback (score {max_score}): "
+            f"{best_matches}"
+        )
+
+        return set(best_matches)
+
+
+    def select_by_fuzzy_global(all_names, target, global_threshold=55, limit=None):
+        matches = fuzzy_compare(candidates=all_names, name=target)
+        if not matches:
+            logger.debug(f"Nenhum match fuzzy global encontrado para '{target}'")
+            return set()
+
+        matches.sort(key=lambda x: x[1], reverse=True)
+        best_name, best_score = matches[0]
+
+        if best_score < global_threshold:
+            logger.debug(f"Melhor score com '{best_name}', porém score {best_score} < {global_threshold} (treshold do fuzzy global)")
+            logger.info(
+                f"'{target}' descartado por não atingir treshold do fuzzy global."
+            )
+            return set()
+
+        selected = [(normalize_name(n), s) for n, s in matches if s >= global_threshold]
+
+        if limit:
+            selected = selected[:limit]
+
+        logger.info(f"'{target}' validado via fuzzy global: {[n for n, _ in selected]}")
+
+        return {n for n, _ in selected}
+
+    def get_units_for(names: set):
+        out = {}
+        for n in names:
+            unit = get_unit_info_by_name(n)
             if unit:
-                names_with_units[normalized_name] = unit
-            logger.info(f"Nome '{ner_name}' validado via LIKE único: {results[0]}")
+                out[n] = unit
+        return out
+
+    # -----------------------------------------------------
+    # PROCESSAMENTO DE CADA NOME
+    # -----------------------------------------------------
+
+    for raw_name in candidates:
+        ner_name = raw_name.strip()
+        logger.debug(f"Validando candidato: '{ner_name}'")
+
+        # descartar nomes absurdamente longos
+        #if len(ner_name) > max_name_len:
+            #logger.info(f"Candidato '{ner_name}' descartado por ultrapassar tamanho máximo.")
+            #continue
+
+        tokens = [t for t in ner_name.split() if len(t) >= 2]
+        all_like_results = set()
+
+        # -------------------------------------------------
+        # 1) LIKE pelo nome completo
+        # -------------------------------------------------
+        results = search_person_like(ner_name)
+
+        if not results:
+            logger.info(f"'{ner_name}' não retornou LIKE — tentando outras estratégias...")
+
+        if len(results) == 1:
+            normalized = normalize_name(results[0])
+            validated.add(normalized)
+            names_with_units.update(get_units_for({normalized}))
+            logger.info(f"'{ner_name}' validado via LIKE único.")
             continue
 
-        elif len(results) > 1 and len(results) <= max_results_limit:
-            matches = fuzzy_compare(candidates=results, name=ner_name)
-            strong = set()
-            if matches:
-                for tup in matches:
-                    m, s = safe_unpack_match(tup)
-                    if s >= 70:
-                        strong.add(normalize_name(m))
+        if 1 < len(results) <= max_results:
+            strong = select_by_fuzzy(results, ner_name)
             if strong:
-                for n in strong:
-                    validated_names.add(n)
-                    unit = get_unit_info_by_name(n)
-                    if unit:
-                        names_with_units[n] = unit
-                logger.info(f"Nomes fortes de '{ner_name}' via fuzzy (>=70): {strong}")
+                validated.update(strong)
+                names_with_units.update(get_units_for(strong))
                 continue
+
+            matches = fuzzy_compare(results, ner_name)
             if matches:
-                near = handle_fuzzy_with_near_matches(matches, ner_name)
-                for n in near:
-                    validated_names.add(n)
-                    unit = get_unit_info_by_name(n)
-                    if unit:
-                        names_with_units[n] = unit
-                logger.info(f"Nomes próximos de '{ner_name}' via fuzzy fallback: {near}")
+                max_score = max(safe_score(x)[1] for x in matches)
+                near = {normalize_name(safe_score(x)[0]) for x in matches if safe_score(x)[1] == max_score}
+                validated.update(near)
+                names_with_units.update(get_units_for(near))
+                logger.info(f"'{ner_name}' validado via melhor score do LIKE+fuzzy.")
                 continue
-            validated_names.update({normalize_name(r) for r in results})
-            logger.info(f"Nomes múltiplos de '{ner_name}' sem necessidade de fuzzy: {results}")
+
+            # nenhum fuzzy útil → valida todos mesmo assim
+            normalized_all = {normalize_name(r) for r in results}
+            validated.update(normalized_all)
+            logger.info(f"'{ner_name}' validado via LIKE múltiplo sem fuzzy.")
             continue
 
-        # --- 2) Janelas de tokens ---
-        tokens = ner_name.split()
-        found = False
-        if len(tokens) > 1:
-            windows = generate_name_windows(tokens, min_size=2)
-            for combo in windows:
-                res = search_person_like(combo)
-                if not res or len(res) > max_results_limit:
-                    continue
-                matches = fuzzy_compare(candidates=res, name=ner_name)
-                if matches:
-                    strong = set()
-                    for tup in matches:
-                        m, s = safe_unpack_match(tup)
-                        if s >= 70:
-                            strong.add(normalize_name(m))
-                    if strong:
-                        for n in strong:
-                            validated_names.add(n)
-                            unit = get_unit_info_by_name(n)
-                            if unit:
-                                names_with_units[n] = unit
-                        logger.info(f"'{ner_name}' validado via combinação '{combo}' e fuzzy forte: {strong}")
-                        found = True
-                        break
-                    near = handle_fuzzy_with_near_matches(matches, ner_name)
-                    if near:
-                        for n in near:
-                            validated_names.add(n)
-                            unit = get_unit_info_by_name(n)
-                            if unit:
-                                names_with_units[n] = unit
-                        logger.info(f"'{ner_name}' validado via combinação '{combo}' e fuzzy próximo: {near}")
-                        found = True
-                        break
-            if found:
+        # -------------------------------------------------
+        # 2) LIKE pelos tokens
+        # -------------------------------------------------
+        for tok in tokens:
+            res = search_person_like(tok)
+            if res and len(res) <= max_results:
+                all_like_results.update(res)
+
+        if all_like_results:
+            strong = select_by_fuzzy(list(all_like_results), ner_name)
+            if strong:
+                validated.update(strong)
+                names_with_units.update(get_units_for(strong))
                 continue
 
-        # --- 3) Fallback fuzzy global ---
-        if all_names is None:
-            all_names = get_all_person_names()
-        matches = fuzzy_compare(candidates=all_names, name=ner_name)
-        if matches:
-            strong_candidates = [(m, s) for m, s, *_ in matches if s >= 70]
-            if len(strong_candidates) > 1:
-                strong_candidates = sorted(strong_candidates, key=lambda x: x[1], reverse=True)[:3]
-            for m, s in strong_candidates:
-                normalized_name = normalize_name(m)
-                validated_names.add(normalized_name)
-                unit = get_unit_info_by_name(normalized_name)
-                if unit:
-                    names_with_units[normalized_name] = unit
-                    logger.info(f"Nome '{normalized_name}' encontrado com unidade: {unit}")
-                else:
-                    logger.info(f"Nome '{normalized_name}' encontrado sem unidade associada.")
-        else:
-            logger.warning(f"Nenhum match encontrado para '{ner_name}' no fallback global.")
+        # -------------------------------------------------
+        # 3) Janelas de tokens
+        # -------------------------------------------------
+        if len(tokens) >= 2:
+            for i in range(len(tokens) - 1):
+                window = f"{tokens[i]} {tokens[i+1]}"
+                res = search_person_like(window)
+                if res and len(res) <= max_results:
+                    strong = select_by_fuzzy(res, ner_name)
+                    if strong:
+                        validated.update(strong)
+                        names_with_units.update(get_units_for(strong))
+                        break
 
-    logger.debug(f"Validação concluída. Nomes validados: {validated_names}")
-    return validated_names, names_with_units
+            if ner_name in validated:
+                continue
+
+        # -------------------------------------------------
+        # 4) Fuzzy global (lazy loading)
+        # -------------------------------------------------
+        if all_names_cache is None:
+            all_names_cache = get_all_person_names()
+            if not all_names_cache:
+                logger.error("Falha ao carregar nomes para fuzzy global.")
+                all_names_cache = []
+
+        strong = select_by_fuzzy_global(all_names_cache, ner_name, global_threshold=55, limit=3)
+
+        if strong:
+            validated.update(strong)
+            names_with_units.update(get_units_for(strong))
+        else:
+            logger.warning(f"Nenhum match encontrado para '{ner_name}' nem no fuzzy global.")
+
+    logger.debug(f"Validação concluída. Nomes validados: {validated}")
+    return validated, names_with_units
+
+
 
 def validate_recipient_name_by_unit(unit_info: dict, name_candidates: set) -> set:
     """
@@ -160,7 +239,6 @@ def validate_recipient_name_by_unit(unit_info: dict, name_candidates: set) -> se
     2. Aplica fuzzy matching com os candidatos NER.
     3. Retorna nomes com score >= 70 ou os mais próximos (fallback).
     """
-
     validated_names = set()
     apartment = unit_info.get("apartment")
     block = unit_info.get("block")
@@ -169,7 +247,7 @@ def validate_recipient_name_by_unit(unit_info: dict, name_candidates: set) -> se
         logger.warning("Nenhum dado de unidade informado para validação.")
         return validated_names
 
-    # --- 1. Busca moradores conforme o que temos ---
+    # --- Busca moradores ---
     residents = set()
     if apartment and block:
         logger.info(f"Buscando moradores do apartamento {apartment}, bloco {block}")
@@ -187,33 +265,27 @@ def validate_recipient_name_by_unit(unit_info: dict, name_candidates: set) -> se
 
     logger.debug(f"Moradores encontrados: {residents}")
 
-    # --- 2. Aplica fuzzy matching entre NER e nomes do banco ---
-    all_matches = []
-    for name in name_candidates:
-        matches = fuzzy_compare(candidates=residents, name=name)
-        if matches:
-            all_matches.append((name, matches))
+    # --- Fuzzy matching ---
+    for ner_name in name_candidates:
+        matches = fuzzy_compare(residents, ner_name)
+        if not matches:
+            continue
 
-    if not all_matches:
-        logger.info("Nenhum match fuzzy encontrado entre candidatos e moradores.")
-        return validated_names
-
-    # --- 3. Seleciona os melhores resultados ---
-    for ner_name, matches in all_matches:
-        # Ignorando o terceiro valor retornado pelo fuzzy_compare (_)
-        strong = {normalize_name(match) for match, score, _ in matches if score >= 70}
+        # nomes com score >= 70
+        strong = {normalize_name(match) for match, score in matches if score >= 70}
         if strong:
             validated_names.update(strong)
             logger.info(f"Nome '{ner_name}' validado via fuzzy forte (>=70): {strong}")
         else:
-            # fallback: usa os com score máximo
-            max_score = max(score for _, score, _ in matches)
-            near = {normalize_name(match) for match, score, _ in matches if score == max_score}
+            # fallback: nomes com score máximo
+            max_score = max(score for _, score in matches)
+            near = {normalize_name(match) for match, score in matches if score == max_score}
             validated_names.update(near)
             logger.info(f"Nome '{ner_name}' validado via fuzzy fallback (score {max_score}): {near}")
 
-    logger.info(f"Validação por unidade concluída. Resultados: {validated_names}")
+    logger.info(f"Validação por unidade concluída. Resultados: {validated_names} - {str(unit_info)}")
     return validated_names
+
 
 def validate_recipient_name_by_apartment(apartment: str, name_candidates: set) -> set:
     """
@@ -227,26 +299,24 @@ def validate_recipient_name_by_apartment(apartment: str, name_candidates: set) -
 
     logger.info(f"Buscando moradores de todos os blocos no apartamento {apartment}")
     residents = get_residents_by_apartment(apartment)
-
     if not residents:
         logger.info(f"Nenhum morador encontrado para apartamento {apartment}.")
         return validated_names
 
     logger.debug(f"Moradores encontrados (por apartamento): {residents}")
 
-    # --- Fuzzy matching ---
     for name in name_candidates:
-        matches = fuzzy_compare(candidates=residents, name=name)
+        matches = fuzzy_compare(residents, name)
         if not matches:
             continue
 
-        strong = {normalize_name(match) for match, score, _ in matches if score >= 70}
+        strong = {normalize_name(match) for match, score in matches if score >= 70}
         if strong:
             validated_names.update(strong)
             logger.info(f"Nome '{name}' validado via fuzzy forte (>=70): {strong}")
         else:
-            max_score = max(score for _, score, _ in matches)
-            near = {normalize_name(match) for match, score, _ in matches if score == max_score}
+            max_score = max(score for _, score in matches)
+            near = {normalize_name(match) for match, score in matches if score == max_score}
             validated_names.update(near)
             logger.info(f"Nome '{name}' validado via fuzzy fallback (score {max_score}): {near}")
 
@@ -266,31 +336,30 @@ def validate_recipient_name_by_block(block: str, name_candidates: set) -> set:
 
     logger.info(f"Buscando moradores do bloco {block}")
     residents = get_residents_by_block(block)
-
     if not residents:
         logger.info(f"Nenhum morador encontrado para bloco {block}.")
         return validated_names
 
     logger.debug(f"Moradores encontrados (por bloco): {residents}")
 
-    # --- Fuzzy matching ---
     for name in name_candidates:
-        matches = fuzzy_compare(candidates=residents, name=name)
+        matches = fuzzy_compare(residents, name)
         if not matches:
             continue
 
-        strong = {normalize_name(match) for match, score, _ in matches if score >= 70}
+        strong = {normalize_name(match) for match, score in matches if score >= 70}
         if strong:
             validated_names.update(strong)
             logger.info(f"Nome '{name}' validado via fuzzy forte (>=70): {strong}")
         else:
-            max_score = max(score for _, score, _ in matches)
-            near = {normalize_name(match) for match, score, _ in matches if score == max_score}
+            max_score = max(score for _, score in matches)
+            near = {normalize_name(match) for match, score in matches if score == max_score}
             validated_names.update(near)
             logger.info(f"Nome '{name}' validado via fuzzy fallback (score {max_score}): {near}")
 
     logger.info(f"Validação por bloco concluída. Resultados: {validated_names}")
     return validated_names
+
 
 def fill_missing_unit_info(name_or_candidates, unit_info: dict) -> dict:
     """

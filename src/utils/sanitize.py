@@ -12,35 +12,67 @@ STATE_ABBR = {
     "RS","RO","RR","SC","SP","SE","TO"
 }
 
-def sanitize_name_cand(candidate: str, stop_tokens: set[str] | None = None) -> str:
-    """Sanitiza um candidato a nome, removendo stop tokens, números e romanos."""
-    from src.utils.utils import is_roman
+def sanitize_name_cand(candidate: str, max_name_len: int,
+                       stop_tokens: set[str] | None = None) -> str:
+
+    from src.utils.utils import is_roman, fuzzy_compare
+    from src.db.queries import search_person_like
+    from src.utils.normalize import normalize_name
+
+    candidate_orig = candidate
+    candidate = normalize_address_complement(candidate)
 
     if stop_tokens is None:
         stop_tokens = load_stop_name_tokens()
 
-    candidate = normalize_address_complement(candidate)
-
     stop_lower = {t.lower() for t in stop_tokens}
     tokens = candidate.split()
+
+    # ==================================================
+    # SANITIZAÇÃO LEVE (candidato ≤ max_name_len)
+    # ==================================================
+    if len(candidate) <= max_name_len:
+        cleaned = [
+            t for t in tokens 
+            if len(t) >= 3 
+            and not t.isdigit()
+            and not is_roman(t)
+            and t.lower() not in stop_lower
+        ]
+        return " ".join(cleaned) if cleaned else ""
+
+    # ==================================================
+    # SANITIZAÇÃO PESADA (candidato > max_name_len)
+    # ==================================================
+
     cleaned_tokens = []
+    normalized = False
 
     for t in tokens:
         t_lower = t.lower()
-        if t_lower in stop_lower:
-            logger.debug(f"Removido stop token: '{t}'")
+
+        # descarta tokens ruins
+        if len(t) < 3 or t.isdigit() or is_roman(t) or t_lower in stop_lower:
             continue
-        if t.isdigit():
-            logger.debug(f"Removido número: '{t}'")
+
+        # busca token no banco
+        results = search_person_like(t)
+        if not results:
             continue
-        if is_roman(t):
-            logger.debug(f"Removido número romano: '{t}'")
-            continue
+
+        # tenta normalizar o candidato completo (apenas 1 vez)
+        if not normalized:
+            matches = fuzzy_compare(results, candidate_orig)
+            if matches:
+                best_match, best_score = max(matches, key=lambda x: x[1])
+                if best_score >= 55:
+                    normalized_name = normalize_name(best_match)
+                    normalized = True
+                    return normalized_name  # fim da sanitização pesada
+
         cleaned_tokens.append(t)
 
-    result = " ".join(cleaned_tokens)
-    logger.debug(f"sanitize_name_cand: '{candidate}' -> '{result}'")
-    return result
+    return " ".join(cleaned_tokens)
 
 
 def remove_stop_words(text: str, stop_words=None) -> str:

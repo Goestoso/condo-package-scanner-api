@@ -28,20 +28,17 @@ def find_codes(text: str):
         logger.debug(f"find_codes: encontrados {len(codes)} código(s): {codes}")
     return codes
 
-def fuzzy_compare(candidates:list, name: str, threshold: int = 70) -> list[tuple[str, int]]:
+def fuzzy_compare(candidates: list, name: str) -> list[tuple[str, float]]:
     """
-    Compara um nome os nomes do banco usando fuzzy matching.
-    Retorna lista de tuplas (nome_do_banco, score) acima do threshold.
+    Retorna lista de tuplas (nome, score) de todos os candidatos comparados com `name`.
     """
-
-    matches = process.extract(
+    raw = process.extract(
         name,
         candidates,
-        scorer=fuzz.token_set_ratio,
-        score_cutoff=threshold
+        scorer=fuzz.token_set_ratio
     )
+    # [(nome, score, index)], vamos ignorar o índice e devolver só (nome, score)
+    matches = [(n, s) for n, s, _ in raw]
 
-    logger.debug(f"Tipo de matches recebido: {type(matches)}, exemplo: {matches[:3] if matches else 'vazio'}")
-
-    logger.debug(f"Matches fuzzy retornados para '{name}': {matches}")
-    return matches  # [(nome, score), ...]
+    logger.debug(f"Scores completos para '{name}': {matches}")
+    return matches

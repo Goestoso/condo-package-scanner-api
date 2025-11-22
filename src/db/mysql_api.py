@@ -19,9 +19,9 @@ class MySQLConnection:
             database=self.config["database"],
             connect_timeout=self.config.get("connection_timeout", 30)
         )
-        logger.info("Conexão MySQL estabelecida com sucesso.")
+        logger.debug("Conexão MySQL estabelecida com sucesso.")
 
     def close(self):
         if self.connection:
             self.connection.close()
-            logger.info("Conexão MySQL encerrada.")
+            logger.debug("Conexão MySQL encerrada.")
