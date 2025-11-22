@@ -25,7 +25,7 @@ def validate_recipient_name_candidates(candidates: set):
         logger.info("Nenhum candidato recebido para validação.")
         return validated, names_with_units
 
-    max_name_len = get_max_name_length()
+    #max_name_len = max_name_length
     max_results = 50
     all_names_cache = None  # lazy loading
 
@@ -42,21 +42,55 @@ def validate_recipient_name_candidates(candidates: set):
             logger.debug(f"Nenhum match fuzzy encontrado para '{target}'")
             return set()
 
-        selected = [(normalize_name(n), s) for n, s in matches if s >= threshold]
+        # Ordena por score desc
+        matches.sort(key=lambda x: x[1], reverse=True)
+        best_name, best_score = matches[0]
+        best_name = normalize_name(best_name)
+
+        # ------------------------------------------------------------
+        # 🚨 NOVA REGRA:
+        # Se o melhor score >=70 → retorna SOMENTE o melhor candidato
+        # ------------------------------------------------------------
+        if best_score >= threshold:
+            logger.info(
+                f"'{target}' validado via fuzzy forte (score {best_score}): "
+                f"[{best_name}]"
+            )
+            return {best_name}
+
+        # ------------------------------------------------------------
+        # Fallback atual: pega todos ≥ 55 (threshold global)
+        # ------------------------------------------------------------
+        selected = [
+            (normalize_name(n), s)
+            for n, s in matches
+            if s >= 55
+        ]
 
         if selected:
-            logger.info(f"'{target}' validado via fuzzy forte: {[n for n, _ in selected]}")
-        else:
-            # fallback — pega o(s) de maior score
-            max_score = max(s for _, s in matches)
-            selected = [(normalize_name(n), s) for n, s in matches if s == max_score]
-            logger.info(f"'{target}' validado via fuzzy fallback (score {max_score})")
+            logger.info(
+                f"'{target}' validado via fuzzy intermediário (score {best_score}): "
+                f"{[n for n, _ in selected]}"
+            )
+            return {n for n, _ in selected}
 
-        selected.sort(key=lambda x: x[1], reverse=True)
-        if limit:
-            selected = selected[:limit]
+        # ------------------------------------------------------------
+        # Último fallback: pega só os melhores scores
+        # ------------------------------------------------------------
+        max_score = best_score
+        best_matches = [
+            normalize_name(n)
+            for n, s in matches
+            if s == max_score
+        ]
 
-        return {n for n, _ in selected}
+        logger.info(
+            f"'{target}' validado via fuzzy fallback (score {max_score}): "
+            f"{best_matches}"
+        )
+
+        return set(best_matches)
+
 
     def select_by_fuzzy_global(all_names, target, global_threshold=55, limit=None):
         matches = fuzzy_compare(candidates=all_names, name=target)
@@ -100,9 +134,9 @@ def validate_recipient_name_candidates(candidates: set):
         logger.debug(f"Validando candidato: '{ner_name}'")
 
         # descartar nomes absurdamente longos
-        if len(ner_name) > max_name_len:
-            logger.info(f"Candidato '{ner_name}' descartado por ultrapassar tamanho máximo.")
-            continue
+        #if len(ner_name) > max_name_len:
+            #logger.info(f"Candidato '{ner_name}' descartado por ultrapassar tamanho máximo.")
+            #continue
 
         tokens = [t for t in ner_name.split() if len(t) >= 2]
         all_like_results = set()

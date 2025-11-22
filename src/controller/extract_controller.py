@@ -11,6 +11,7 @@ from src.utils.validators import (
 from src.models.formatter import format_success_result, format_error_result
 from src.utils.normalize import normalize_block
 from src.utils.sanitize import sanitize_name_cand
+from src.db.queries import get_max_name_length
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -42,13 +43,20 @@ def extract_package_info_controller(image_input):
         # --------------------------
         extractor.extract_recipient_name()
         raw_candidates = extractor.candidates_name
-        sanitized_candidates = {sanitize_name_cand(c) for c in raw_candidates if sanitize_name_cand(c)}
+        max_name_len = get_max_name_length()
+        sanitized_candidates = {
+            cleaned
+            for c in raw_candidates
+            if (cleaned := sanitize_name_cand(c, max_name_len))
+        }
 
         if not sanitized_candidates:
             return format_success_result(
                 names_with_units={}, 
                 reason="Nenhum candidato de nome válido encontrado na etiqueta."
             )
+        
+        logger.info(f"Candidatos a nomes sanitizados: {str(sanitized_candidates)}")
 
         # --------------------------
         # 4. Endereço e unidade
