@@ -402,6 +402,8 @@ uvicorn server:app --reload
 }
 ```
 
+> 📝 Para mais detalhes, acesse a documentação interativa da API (**Swagger UI**) que ficará disponível em `http://localhost:8000/docs` após o servidor entrar em execução.
+
 ### Usando `Docker` (📦 Container)
 
 A aplicação pode ser executada facilmente dentro de um container Docker, sem a necessidade de instalar manualmente dependências como Python, drivers ODBC ou Tesseract OCR. 
@@ -492,7 +494,9 @@ Após o container estar em execução, a API estará disponível em:
 👉 http://localhost:8000
 
 Você pode testar diretamente os endpoints no navegador ou ferramentas como Insomnia ou Postman.
-A documentação interativa da API (Swagger UI) estará disponível em:
+
+
+- A documentação interativa da API (**Swagger UI**) estará disponível em:
 
 🔗 http://localhost:8000/docs
 
