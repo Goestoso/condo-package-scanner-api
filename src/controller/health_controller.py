@@ -20,12 +20,14 @@ def healthcheck_controller():
         logger.warning(f"Banco de dados indisponível: {e}")
 
     if db_connected:
+        logger.debug("Solicitação GET Healthcheck CondoPackageScanner de conexão com o banco de dados: o banco de dados está disponível.")
         return {
             "status": "online",
             "db_connected": True,
             "message": "Condo Package Scanner API ativa e conectada ao banco de dados."
         }
     else:
+        logger.warning("Solicitação GET Healthcheck CondoPackageScanner de conexão com o banco de dados: o banco de dados está indisponível.")
         return {
             "status": "online",
             "db_connected": False,
