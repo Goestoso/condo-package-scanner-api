@@ -16,7 +16,7 @@ logger = get_logger(__name__)
 )
 async def extract_package_info_route(file: UploadFile = File(...)):
     try:
-        logger.info(f"Requisição recebida: arquivo '{file.filename}' ({file.content_type})")
+        logger.info(f"Solicitação POST extract CondoPackageScanner: arquivo '{file.filename}' ({file.content_type})")
         image_bytes = await file.read()
         result = extract_package_info_controller(image_bytes)
 
