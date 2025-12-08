@@ -1,0 +1,17 @@
+{
+    "complements": {
+        "apartamento": ["ap", "apt", "apart", "apartam", "apartamento", "partamento"],
+        "bloco": ["bl", "blc", "blco", "bloco", "boco"],
+        "conjunto": ["cj", "conj", "conjunto"],
+        "condominio": ["cond", "condm", "condom", "condominio", "condomínio"]
+    },
+
+    "prefixes": {
+        "rua": ["rua", "r", "ri", "ru", "rn", "ra"],
+        "avenida": ["av", "ave", "nida", "avn", "avnida"],
+        "rodovia": ["rod", "dovia", "rodv", "rodovia"],
+        "estrada": ["est", "estr", "estrada", "trada"],
+        "travessa": ["tv", "trv", "trav", "travessa"]
+    }
+
+}

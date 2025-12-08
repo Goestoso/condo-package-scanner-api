@@ -205,3 +205,17 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Ignorar diretórios chamados log ou logs
+log/
+logs/
+
+# Ignorar qualquer arquivo .log em qualquer lugar
+*.log
+
+# Ignorar qualquer diretório que tenha "log" no nome
+*log*/
+
+# configs locais (não versionadas)
+configs/db_connection.yml
+

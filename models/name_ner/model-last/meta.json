@@ -1,0 +1,46 @@
+{
+  "lang":"pt",
+  "name":"pipeline",
+  "version":"0.0.0",
+  "spacy_version":">=3.8.7,<3.9.0",
+  "description":"",
+  "author":"",
+  "email":"",
+  "url":"",
+  "license":"",
+  "spacy_git_version":"4b65aa7",
+  "vectors":{
+    "width":0,
+    "vectors":0,
+    "keys":0,
+    "name":null,
+    "mode":"default"
+  },
+  "labels":{
+    "ner":[
+      "PERSON"
+    ]
+  },
+  "pipeline":[
+    "ner"
+  ],
+  "components":[
+    "ner"
+  ],
+  "disabled":[
+
+  ],
+  "performance":{
+    "ents_f":0.9902451885,
+    "ents_p":0.9873817035,
+    "ents_r":0.9931253305,
+    "ents_per_type":{
+      "PERSON":{
+        "p":0.9873817035,
+        "r":0.9931253305,
+        "f":0.9902451885
+      }
+    },
+    "ner_loss":170.976348877
+  }
+}

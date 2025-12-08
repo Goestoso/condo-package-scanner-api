@@ -1,0 +1,20 @@
+# configs/db_connection.example.yml
+engine: sqlserver  # ou mysql
+
+# Para SQL Server (Azure)
+server: condominio-server.database.windows.net
+database: db-condominios-encomendas
+username: nome_de_usuario
+password: 'senha_aqui'
+driver: "{ODBC Driver 18 for SQL Server}" # Ou o driver ODBC que estiver instalado
+encrypt: true
+trust_server_certificate: false
+connection_timeout: 30
+
+# Para MySQL
+# host: shortline.proxy.rlwy.net
+# port: 20562
+# database: db_condominios_encomendas
+# username: nome_de_usuario
+# password: senha_aqui
+# connection_timeout: 30

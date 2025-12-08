@@ -1,0 +1,237 @@
+import unicodedata, re
+from src.utils.config_loader import load_stop_words, load_stop_name_tokens
+from src.utils.normalize import normalize_numbers, normalize_address_complement
+from src.utils.logger import get_logger
+
+logger = get_logger(__name__)
+
+# Lista de siglas de estados brasileiros
+STATE_ABBR = {
+    "AC","AL","AP","AM","BA","CE","DF","ES","GO","MA",
+    "MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN",
+    "RS","RO","RR","SC","SP","SE","TO"
+}
+
+def sanitize_name_cand(candidate: str, max_name_len: int,
+                       stop_tokens: set[str] | None = None) -> str:
+
+    from src.utils.utils import is_roman, fuzzy_compare
+    from src.db.queries import search_person_like
+    from src.utils.normalize import normalize_name
+
+    candidate_orig = candidate
+    candidate = normalize_address_complement(candidate)
+
+    if stop_tokens is None:
+        stop_tokens = load_stop_name_tokens()
+
+    stop_lower = {t.lower() for t in stop_tokens}
+    tokens = candidate.split()
+
+    # ==================================================
+    # SANITIZAÇÃO LEVE (candidato ≤ max_name_len)
+    # ==================================================
+    if len(candidate) <= max_name_len:
+        cleaned = [
+            t for t in tokens 
+            if len(t) >= 3 
+            and not t.isdigit()
+            and not is_roman(t)
+            and t.lower() not in stop_lower
+        ]
+        return " ".join(cleaned) if cleaned else ""
+
+    # ==================================================
+    # SANITIZAÇÃO PESADA (candidato > max_name_len)
+    # ==================================================
+
+    cleaned_tokens = []
+    normalized = False
+
+    for t in tokens:
+        t_lower = t.lower()
+
+        # descarta tokens ruins
+        if len(t) < 3 or t.isdigit() or is_roman(t) or t_lower in stop_lower:
+            continue
+
+        # busca token no banco
+        results = search_person_like(t)
+        if not results:
+            continue
+
+        # tenta normalizar o candidato completo (apenas 1 vez)
+        if not normalized:
+            matches = fuzzy_compare(results, candidate_orig)
+            if matches:
+                best_match, best_score = max(matches, key=lambda x: x[1])
+                if best_score >= 55:
+                    normalized_name = normalize_name(best_match)
+                    normalized = True
+                    return normalized_name  # fim da sanitização pesada
+
+        cleaned_tokens.append(t)
+
+    return " ".join(cleaned_tokens)
+
+
+def remove_stop_words(text: str, stop_words=None) -> str:
+    if stop_words is None:
+        stop_words = load_stop_words()
+    original = text
+    for word in stop_words:
+        text = re.sub(rf"\b{word}\w*\b", "", text, flags=re.IGNORECASE)
+    logger.debug(f"remove_stop_words: '{original}' -> '{text}'")
+    return text
+
+
+def keep_relevant_chars(text: str, for_ner: bool) -> str:
+    original = text
+    text = re.sub(r"[^a-zA-Z0-9á-úÁ-ÚçÇ.,\s]", " ", text)
+    if for_ner:
+        text = re.sub(r"[.,]", " ", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    logger.debug(f"keep_relevant_chars: '{original}' -> '{text}'")
+    return text
+
+
+def remove_alphanum_codes(text: str) -> str:
+    original = text
+    text = re.sub(r'\b(?=\w*[A-Za-z])(?=\w*\d)\w{9,}\b', '', text)
+    logger.debug(f"remove_alphanum_codes: '{original}' -> '{text}'")
+    return text
+
+
+def remove_long_numbers(text: str, max_len: int = 7) -> str:
+    original = text
+    text = re.sub(r'\b\d{%d,}\b' % max_len, '', text)
+    logger.debug(f"remove_long_numbers: '{original}' -> '{text}'")
+    return text
+
+
+def remove_short_words(words: list[str], min_len: int = 3) -> list[str]:
+    from src.utils.utils import is_roman
+    out = []
+    for w in words:
+        if len(w) >= min_len or re.fullmatch(r'\d+', w) or is_roman(w) or w.upper() in STATE_ABBR:
+            out.append(w)
+        else:
+            logger.debug(f"Removida palavra curta: '{w}'")
+    return out
+
+
+def remove_links(words: list[str]) -> list[str]:
+    out = [w for w in words if not re.match(r'\w+\.\w+(\.\w+)?', w)]
+    removed = set(words) - set(out)
+    for w in removed:
+        logger.debug(f"Removido link: '{w}'")
+    return out
+
+
+def clear_ceps(text: str) -> str:
+    original = text
+    text = re.sub(r'\b\d{8}\b', '', text)
+    logger.debug(f"clear_ceps: '{original}' -> '{text}'")
+    return text
+
+
+def remove_accents(text: str) -> str:
+    original = text
+    text = ''.join(
+        c for c in unicodedata.normalize('NFD', text)
+        if unicodedata.category(c) != 'Mn'
+    )
+    logger.debug(f"remove_accents: '{original}' -> '{text}'")
+    return text
+
+
+def remove_codes(text: str, min_len: int = 3) -> str:
+    original = text
+    text = re.sub(r'\b(?=\w*[A-Za-z])(?=\w*\d)\w{' + str(min_len) + r',}\b', '', text)
+    logger.debug(f"remove_codes: '{original}' -> '{text}'")
+    return text
+
+def sanitize_edges(text: str, min_len_edge=3) -> str:
+    """
+    Remove lixo do início e fim de um texto OCR, preservando conteúdo relevante no meio.
+    
+    Args:
+        text: string a ser sanitizada.
+        remove_acc: se True, remove acentos.
+        min_len_edge: tamanho mínimo de token aceitável nas bordas.
+    """
+    if not text:
+        return ""
+
+    logger.debug(f"Sanitizando bordas do texto: '{text}'")
+
+    # 1. Substitui caracteres indesejados por espaço
+    text = re.sub(r"[^a-zA-Z0-9á-úÁ-ÚçÇ\s]", " ", text)
+    text = re.sub(r"\s+", " ", text).strip()
+
+    words = text.split()
+
+    # 2. Remove lixo do início
+    while words:
+        w = words[0]
+        if (len(w) < min_len_edge and not re.fullmatch(r'\d+', w)
+                and w.upper() not in STATE_ABBR):
+            logger.debug(f"Removido do início: '{w}'")
+            words.pop(0)
+        else:
+            break
+
+    # 3. Remove lixo do final
+    while words:
+        w = words[-1]
+        if (len(w) < min_len_edge and not re.fullmatch(r'\d+', w)
+                and w.upper() not in STATE_ABBR):
+            logger.debug(f"Removido do final: '{w}'")
+            words.pop(-1)
+        else:
+            break
+
+    text = " ".join(words)
+
+    # 4. Remove links e códigos longos no meio
+    words = text.split()
+    words = remove_links(words)
+    text = " ".join(words)
+    text = remove_alphanum_codes(text)
+
+
+    logger.debug(f"Sanitização de bordas concluída: '{text}'")
+    return text
+
+def sanitize_full(text: str, stop_words=None, min_words=2, for_ner=True, clear_cep=False, remove_acc=True):
+    """Executa pipeline completo de sanitização para OCR."""
+    if stop_words is None:
+        stop_words = load_stop_words()
+
+    if not text:
+        return ""
+
+    logger.debug(f"Pipeline de sanitização iniciado: '{text}'")
+
+    text = remove_stop_words(text, stop_words)
+    text = keep_relevant_chars(text, for_ner)
+    text = remove_alphanum_codes(text)
+    text = normalize_numbers(text)
+    text = remove_long_numbers(text)
+    text = remove_codes(text)
+    if remove_acc:
+        text = remove_accents(text)
+
+    words = text.split()
+    words = remove_short_words(words, min_len=3)
+    words = remove_links(words)
+    text = " ".join(words)
+
+    if clear_cep:
+        text = clear_ceps(text)
+
+    if len(text.split()) < min_words:
+        logger.debug(f"Pipeline de sanitização resultou em texto vazio ou pequeno: '{text}'")
+        return ""
+
+    return text
